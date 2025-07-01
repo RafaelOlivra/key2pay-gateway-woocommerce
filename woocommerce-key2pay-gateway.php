@@ -2,11 +2,11 @@
 
 /**
  * Plugin Name: WooCommerce Key2Pay Gateway
- * Plugin URI:  https://site.com/
+ * Plugin URI:  https://axons.com/
  * Description: A WooCommerce payment gateway for Key2Pay.
  * Version:     1.0.0
  * Author:      AX
- * Author URI:  https://site.com/
+ * Author URI:  https://axons.com/
  * Text Domain: woocommerce-key2pay-gateway
  * Domain Path: /languages
  * WC requires at least: 8.0
@@ -42,6 +42,7 @@ class WC_Key2Pay_Gateway_Plugin
 
         // Include the main gateway class.
         require_once plugin_dir_path(__FILE__) . 'includes/class-wc-key2pay-gateway.php';
+        require_once plugin_dir_path(__FILE__) . 'includes/class-wc-key2pay-instapay-gateway.php';
 
         // Add the Key2Pay Gateway to WooCommerce.
         add_filter('woocommerce_payment_gateways', array( $this, 'add_key2pay_gateway' ));

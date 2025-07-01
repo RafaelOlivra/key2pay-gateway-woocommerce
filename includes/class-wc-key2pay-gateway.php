@@ -7,11 +7,27 @@ if (! defined('ABSPATH')) {
  * WC_Key2Pay_Gateway Class.
  *
  * A custom WooCommerce payment gateway for Key2Pay.
+ * Deal's with Server-to-Server (S2S) transactions for credit card payments by default.
  *
  * @extends WC_Payment_Gateway
  */
 class WC_Key2Pay_Gateway extends WC_Payment_Gateway
 {
+    public $id;
+    public $icon;
+    public $has_fields;
+    public $method_title;
+    public $method_description;
+    public $title;
+    public $description;
+    public $enabled;
+    public $merchant_id;
+    public $password;
+    public $webhook_secret;
+    public $debug;
+    public $log;
+    public $form_fields;
+
     /**
      * API Endpoint for Key2Pay S2S transactions.
      */
