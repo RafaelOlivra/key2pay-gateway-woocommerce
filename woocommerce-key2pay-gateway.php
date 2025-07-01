@@ -5,11 +5,11 @@
  * Plugin URI:  https://site.com/
  * Description: A WooCommerce payment gateway for Key2Pay.
  * Version:     1.0.0
- * Author:      Your Name
- * Author URI:  AX
+ * Author:      AX
+ * Author URI:  https://site.com/
  * Text Domain: woocommerce-key2pay-gateway
  * Domain Path: /languages
- * WC requires at least: 4.0
+ * WC requires at least: 8.0
  * WC tested up to: 8.0
  */
 
