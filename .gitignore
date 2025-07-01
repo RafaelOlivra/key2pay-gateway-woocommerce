@@ -1,0 +1,27 @@
+# Build directories
+public
+dist
+modules-assets
+
+# Dependency directory
+# https://www.npmjs.org/doc/misc/npm-faq.html#should-i-check-my-node_modules-folder-into-git
+node_modules
+pnpm-lock.yaml
+
+# Ignore submodules
+# includes/modules
+
+# Logs
+logs
+*.log
+
+# htaccess
+/.htaccess
+
+# Other files
+.code-workspace
+*Zone.Identifier
+.deploy.env
+/vendor/
+desktop.ini
+.tmp

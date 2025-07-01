@@ -1,0 +1,84 @@
+<?php
+
+/**
+ * Plugin Name: WooCommerce Key2Pay Gateway
+ * Plugin URI:  https://site.com/
+ * Description: A WooCommerce payment gateway for Key2Pay.
+ * Version:     1.0.0
+ * Author:      Your Name
+ * Author URI:  AX
+ * Text Domain: woocommerce-key2pay-gateway
+ * Domain Path: /languages
+ * WC requires at least: 4.0
+ * WC tested up to: 8.0
+ */
+
+if (! defined('ABSPATH')) {
+    exit; // Exit if accessed directly.
+}
+
+/**
+ * The main plugin class.
+ */
+class WC_Key2Pay_Gateway_Plugin
+{
+    /**
+     * Constructor.
+     */
+    public function __construct()
+    {
+        add_action('plugins_loaded', array( $this, 'init' ));
+    }
+
+    /**
+     * Initialize the plugin.
+     */
+    public function init()
+    {
+        // Check if WooCommerce is active.
+        if (! class_exists('WooCommerce')) {
+            return;
+        }
+
+        // Include the main gateway class.
+        require_once plugin_dir_path(__FILE__) . 'includes/class-wc-key2pay-gateway.php';
+
+        // Add the Key2Pay Gateway to WooCommerce.
+        add_filter('woocommerce_payment_gateways', array( $this, 'add_key2pay_gateway' ));
+
+        // Load plugin text domain.
+        load_plugin_textdomain('woocommerce-key2pay-gateway', false, basename(dirname(__FILE__)) . '/languages');
+
+        // Enqueue scripts and styles for the checkout page.
+        add_action('wp_enqueue_scripts', array( $this, 'key2pay_enqueue_checkout_scripts' ));
+    }
+
+    /**
+     * Enqueue scripts and styles for the Key2Pay checkout.
+     *
+     * This function checks if the current page is the checkout page and not an endpoint,
+     * then enqueues the necessary JavaScript and CSS files for the Key2Pay payment gateway.
+     */
+    public function key2pay_enqueue_checkout_scripts()
+    {
+        if (is_checkout() && ! is_wc_endpoint_url()) {
+            wp_enqueue_script('key2pay-checkout', plugin_dir_url(__FILE__) . 'assets/js/key2pay-checkout.js', array( 'jquery' ), '1.0.0', true);
+            wp_enqueue_style('key2pay-styles', plugin_dir_url(__FILE__) . 'assets/css/key2pay.css', array(), '1.0.0');
+        }
+    }
+
+    /**
+     * Add the Key2Pay Gateway to the list of available gateways.
+     *
+     * @param array $gateways Available gateways.
+     * @return array $gateways Updated gateways.
+     */
+    public function add_key2pay_gateway($gateways)
+    {
+        $gateways[] = 'WC_Key2Pay_Gateway';
+        return $gateways;
+    }
+}
+
+// Instantiate the plugin.
+new WC_Key2Pay_Gateway_Plugin();
