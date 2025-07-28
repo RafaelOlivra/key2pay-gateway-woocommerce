@@ -57,6 +57,7 @@ class WC_Key2Pay_Redirect_Gateway extends WC_Payment_Gateway
     {
         // Initialize logger
         $this->log = wc_get_logger();
+        $this->custom_log_file = WP_CONTENT_DIR . '/uploads/key2pay-gateway.log';
 
         $this->id                 = 'key2pay_redirect'; // Unique ID for redirect gateway.
         $this->icon               = apply_filters('woocommerce_key2pay_redirect_icon', plugin_dir_url(dirname(__FILE__)) . 'assets/images/key2pay-admin.webp');
@@ -263,20 +264,16 @@ class WC_Key2Pay_Redirect_Gateway extends WC_Payment_Gateway
         $headers = array_merge($headers, $auth_headers);
 
         // Log the complete request data before sending
-        $log_file = WP_CONTENT_DIR . '/uploads/mycustomlog.log';
-        $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay API Request: Preparing to send payment request for order #' . $order_id . PHP_EOL;
-        error_log($log_message, 3, $log_file);
-
-        $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay API Request: API URL: ' . $this->build_api_url('/PaymentToken/Create') . PHP_EOL;
-        error_log($log_message, 3, $log_file);
+        $this->log_to_file('Key2Pay API Request: Preparing to send payment request for order #' . $order_id);
+        $this->log_to_file('Key2Pay API Request: API URL: ' . $this->build_api_url('/PaymentToken/Create'));
 
         // Log headers without sensitive authentication data
         $safe_headers = $headers;
         if (isset($safe_headers['Authorization'])) {
             $safe_headers['Authorization'] = '[REDACTED]';
         }
-        $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay API Request: Headers: ' . print_r($safe_headers, true) . PHP_EOL;
-        error_log($log_message, 3, $log_file);
+
+        $this->log_to_file('Key2Pay API Request: Headers: ' . print_r($safe_headers, true));
 
         // Log request data without sensitive information
         $safe_request_data = $request_data;
@@ -286,14 +283,10 @@ class WC_Key2Pay_Redirect_Gateway extends WC_Payment_Gateway
         if (isset($safe_request_data['merchantid'])) {
             $safe_request_data['merchantid'] = '[REDACTED]';
         }
-        $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay API Request: Request Data: ' . print_r($safe_request_data, true) . PHP_EOL;
-        error_log($log_message, 3, $log_file);
 
-        $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay API Request: Webhook URL being sent: ' . $server_url . PHP_EOL;
-        error_log($log_message, 3, $log_file);
-
-        $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay API Request: JSON payload length: ' . strlen(json_encode($request_data)) . ' characters' . PHP_EOL;
-        error_log($log_message, 3, $log_file);
+        $this->log_to_file('Key2Pay API Request: Request Data: ' . print_r($safe_request_data, true));
+        $this->log_to_file('Key2Pay API Request: Webhook URL being sent: ' . $server_url);
+        $this->log_to_file('Key2Pay API Request: JSON payload length: ' . strlen(json_encode($request_data)) . ' characters');
 
         // Make the API call to Key2Pay redirect endpoint.
         $response = wp_remote_post(
@@ -401,9 +394,7 @@ class WC_Key2Pay_Redirect_Gateway extends WC_Payment_Gateway
         // Check if we have URL parameters (Key2Pay redirect) - fallback is enabled
         if (isset($_GET['result']) || isset($_GET['responsecode']) || isset($_GET['trackid'])) {
             // Log the parameters for debugging
-            $log_file = WP_CONTENT_DIR . '/uploads/mycustomlog.log';
-            $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay Redirect: URL parameters detected - processing as fallback' . PHP_EOL;
-            error_log($log_message, 3, $log_file);
+            $this->log_to_file('Key2Pay Redirect: URL parameters detected - processing as fallback');
 
             // Process URL parameters as fallback
             $this->process_url_parameters_fallback($order);
@@ -441,29 +432,24 @@ class WC_Key2Pay_Redirect_Gateway extends WC_Payment_Gateway
         $response_description = isset($_GET['responsedescription']) ? sanitize_text_field($_GET['responsedescription']) : '';
 
         // Log for debugging
-        $log_file = WP_CONTENT_DIR . '/uploads/mycustomlog.log';
-        $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay Fallback: Processing result=' . $result . ', response_code=' . $response_code . ', track_id=' . $track_id . ', description=' . $response_description . PHP_EOL;
-        error_log($log_message, 3, $log_file);
+        $this->log_to_file('Key2Pay Fallback: Processing result=' . $result . ', response_code=' . $response_code . ', track_id=' . $track_id . ', description=' . $response_description);
 
         // Only process if order is still pending (webhook hasn't processed it yet)
         if ($order->has_status('pending')) {
             $numeric_code = $this->extract_numeric_code($response_code);
 
-            $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay Fallback: Order #' . $order->get_id() . ' is pending, processing with code: ' . $numeric_code . PHP_EOL;
-            error_log($log_message, 3, $log_file);
+            $this->log_to_file('Key2Pay Fallback: Order #' . $order->get_id() . ' is pending, processing with code: ' . $numeric_code);
 
             // Process the payment result using the same logic as webhooks
             $this->process_payment_result($order, $numeric_code, '', $response_description);
 
-            $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay Fallback: Order #' . $order->get_id() . ' status updated to: ' . $order->get_status() . PHP_EOL;
-            error_log($log_message, 3, $log_file);
+            $this->log_to_file('Key2Pay Fallback: Order #' . $order->get_id() . ' status updated to: ' . $order->get_status());
 
             // Add order note about fallback processing
             $order->add_order_note(sprintf(__('Payment status processed via URL parameter fallback. Code: %s, Description: %s', 'key2pay'), $numeric_code, $response_description));
 
         } else {
-            $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay Fallback: Order #' . $order->get_id() . ' already processed by webhook, status: ' . $order->get_status() . ' - skipping fallback' . PHP_EOL;
-            error_log($log_message, 3, $log_file);
+            $this->log_to_file('Key2Pay Fallback: Order #' . $order->get_id() . ' already processed by webhook, skipping fallback processing.');
         }
     }
 
@@ -492,30 +478,23 @@ class WC_Key2Pay_Redirect_Gateway extends WC_Payment_Gateway
     public function handle_webhook_callback()
     {
         // Always log webhook attempts for debugging
-        $log_file = WP_CONTENT_DIR . '/uploads/mycustomlog.log';
-        $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay Webhook: Attempt received' . PHP_EOL;
-        error_log($log_message, 3, $log_file);
+        $this->log_to_file('Key2Pay Webhook: Attempt received');
 
         // Log request method and headers for debugging
-        $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay Webhook: Request Method: ' . $_SERVER['REQUEST_METHOD'] . PHP_EOL;
-        error_log($log_message, 3, $log_file);
-
-        $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay Webhook: Request Headers: ' . print_r(getallheaders(), true) . PHP_EOL;
-        error_log($log_message, 3, $log_file);
+        $this->log_to_file('Key2Pay Webhook: Request Method: ' . $_SERVER['REQUEST_METHOD']);
+        $this->log_to_file('Key2Pay Webhook: Request Headers: ' . print_r(getallheaders(), true));
 
         // Get the raw POST data
         $raw_data = file_get_contents('php://input');
 
         // Log raw data length only (for debugging without exposing sensitive data)
-        $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay Webhook: Raw data length: ' . strlen($raw_data) . ' characters' . PHP_EOL;
-        error_log($log_message, 3, $log_file);
+        $this->log_to_file('Key2Pay Webhook: Raw data length: ' . strlen($raw_data) . ' characters');
 
         // Parse the webhook data
         $webhook_data = json_decode($raw_data, true);
 
         if (!$webhook_data) {
-            $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay Webhook: Failed to parse JSON data' . PHP_EOL;
-            error_log($log_message, 3, $log_file);
+            $this->log_to_file('Key2Pay Webhook: Failed to parse JSON data: ' . $raw_data);
 
             if ($this->debug) {
                 $this->log->error('Key2Pay Webhook: Failed to parse webhook data', array('source' => 'key2pay-redirect'));
@@ -535,8 +514,8 @@ class WC_Key2Pay_Redirect_Gateway extends WC_Payment_Gateway
         if (isset($safe_webhook_data['authcode'])) {
             $safe_webhook_data['authcode'] = '[REDACTED]';
         }
-        $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay Webhook: Parsed data: ' . print_r($safe_webhook_data, true) . PHP_EOL;
-        error_log($log_message, 3, $log_file);
+
+        $this->log_to_file('Key2Pay Webhook: Parsed data: ' . print_r($safe_webhook_data, true));
 
         if ($this->debug) {
             $this->log->debug('Key2Pay Webhook: Received credit card payment data: ' . print_r($webhook_data, true), array('source' => 'key2pay-redirect'));
@@ -553,14 +532,12 @@ class WC_Key2Pay_Redirect_Gateway extends WC_Payment_Gateway
         $error_text = isset($webhook_data['error_text']) ? $webhook_data['error_text'] : '';
 
         // Log extracted fields
-        $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay Webhook: Extracted fields - type: ' . $type . ', result: ' . $result . ', response_code: ' . $response_code . ', track_id: ' . $track_id . ', merchant_id: ' . $merchant_id . ', transaction_id: ' . $transaction_id . PHP_EOL;
-        error_log($log_message, 3, $log_file);
+        $this->log_to_file('Key2Pay Webhook: Extracted fields - type: ' . $type . ', result: ' . $result . ', response_code: ' . $response_code . ', track_id: ' . $track_id . ', merchant_id: ' . $merchant_id . ', transaction_id: ' . $transaction_id);
 
         // Always use response_code for processing, as it contains the actual gateway response code
         $code_to_process = $response_code;
 
-        $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay Webhook: Code to process: ' . $code_to_process . PHP_EOL;
-        error_log($log_message, 3, $log_file);
+        $this->log_to_file('Key2Pay Webhook: Code to process: ' . $code_to_process);
 
         // Find the order by track ID
         $order = null;
@@ -570,15 +547,12 @@ class WC_Key2Pay_Redirect_Gateway extends WC_Payment_Gateway
             if (count($parts) >= 2) {
                 $order_id = $parts[0];
                 $order = wc_get_order($order_id);
-
-                $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay Webhook: Extracted order_id: ' . $order_id . ' from track_id: ' . $track_id . PHP_EOL;
-                error_log($log_message, 3, $log_file);
+                $this->log_to_file('Key2Pay Webhook: Extracted order_id: ' . $order_id . ' from track_id: ' . $track_id);
             }
         }
 
         if (!$order) {
-            $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay Webhook: Order not found for track_id: ' . $track_id . PHP_EOL;
-            error_log($log_message, 3, $log_file);
+            $this->log_to_file('Key2Pay Webhook: Order not found for track_id: ' . $track_id);
 
             if ($this->debug) {
                 $this->log->error('Key2Pay Webhook: Order not found for track_id: ' . $track_id, array('source' => 'key2pay-redirect'));
@@ -587,8 +561,7 @@ class WC_Key2Pay_Redirect_Gateway extends WC_Payment_Gateway
             exit();
         }
 
-        $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay Webhook: Found order #' . $order->get_id() . ' - current status: ' . $order->get_status() . PHP_EOL;
-        error_log($log_message, 3, $log_file);
+        $this->log_to_file('Key2Pay Webhook: Found order #' . $order->get_id() . ' - current status: ' . $order->get_status());
 
         if ($this->debug) {
             $this->log->debug('Key2Pay Webhook: Processing credit card payment for order #' . $order->get_id(), array('source' => 'key2pay-redirect'));
@@ -598,8 +571,7 @@ class WC_Key2Pay_Redirect_Gateway extends WC_Payment_Gateway
         $this->process_payment_result($order, $code_to_process, $transaction_id, $error_text);
 
         // Log final status
-        $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay Webhook: Final order status: ' . $order->get_status() . PHP_EOL;
-        error_log($log_message, 3, $log_file);
+        $this->log_to_file('Key2Pay Webhook: Final order status: ' . $order->get_status());
 
         // Always acknowledge the webhook
         status_header(200);
@@ -909,21 +881,17 @@ class WC_Key2Pay_Redirect_Gateway extends WC_Payment_Gateway
      */
     public function is_available()
     {
-        $log_file = WP_CONTENT_DIR . '/uploads/mycustomlog.log';
-        $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay Debug: Credit card gateway is_available() called' . PHP_EOL;
-        error_log($log_message, 3, $log_file);
+        $this->log_to_file('Key2Pay Debug: Credit card gateway is_available() called');
 
         // Check if gateway is enabled
         if ('yes' !== $this->enabled) {
-            $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay Debug: Credit card gateway disabled' . PHP_EOL;
-            error_log($log_message, 3, $log_file);
+            $this->log_to_file('Key2Pay Debug: Credit card gateway disabled');
             return false;
         }
 
         // Check if credentials are provided
         if (empty($this->merchant_id) || empty($this->password)) {
-            $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay Debug: Missing credentials - merchant_id: ' . (empty($this->merchant_id) ? 'empty' : 'set') . ', password: ' . (empty($this->password) ? 'empty' : 'set') . PHP_EOL;
-            error_log($log_message, 3, $log_file);
+            $this->log_to_file('Key2Pay Debug: Missing credentials - merchant_id: ' . (empty($this->merchant_id) ? 'empty' : 'set') . ', password: ' . (empty($this->password) ? 'empty' : 'set'));
 
             if (is_admin() && current_user_can('manage_woocommerce') && (! defined('DOING_AJAX') || ! DOING_AJAX)) {
                 wc_print_notice(sprintf(__('Key2Pay credit card gateway is enabled but credentials are not configured. %sClick here to configure.%s', 'key2pay'), '<a href="' . admin_url('admin.php?page=wc-settings&tab=checkout&section=' . $this->id) . '">', '</a>'), 'error');
@@ -931,9 +899,17 @@ class WC_Key2Pay_Redirect_Gateway extends WC_Payment_Gateway
             return false;
         }
 
-        $log_message = '[' . date('Y-m-d H:i:s') . '] Key2Pay Debug: Credit card gateway available - all checks passed' . PHP_EOL;
-        error_log($log_message, 3, $log_file);
-
+        $this->log_to_file('Key2Pay Debug: Credit card gateway available - all checks passed');
         return parent::is_available();
+    }
+
+    /**
+     * Log messages to a custom log file.
+     *
+     * @param string $message The message to log.
+     */
+    private function log_to_file($message)
+    {
+        error_log('[' . date('Y-m-d H:i:s') . '] ' . $message . PHP_EOL, 3, $this->custom_log_file);
     }
 }
