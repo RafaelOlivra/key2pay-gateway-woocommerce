@@ -1,0 +1,145 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Key2Pay Gateway 1.0.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-01-27 10:00+0000\n"
+"PO-Revision-Date: 2025-01-27 10:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: sr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "Key2Pay Secure Redirect"
+msgstr "Key2Pay Sigurno Preusmeravanje"
+
+msgid "Accept payments via Key2Pay with maximum security. Customers are redirected to Key2Pay's hosted payment page."
+msgstr "Prihvatite plaćanja putem Key2Pay-a uz maksimalnu sigurnost. Kupci se preusmeravaju na Key2Pay-ovu stranicu za plaćanje."
+
+msgid "Pay securely using Key2Pay. You will be redirected to complete your payment securely."
+msgstr "Platite sigurno koristeći Key2Pay. Bićete preusmereni da sigurno završite vaše plaćanje."
+
+msgid "Enable/Disable"
+msgstr "Omogući/Onemogući"
+
+msgid "Enable Key2Pay Secure Redirect"
+msgstr "Omogući Key2Pay Sigurno Preusmeravanje"
+
+msgid "Title"
+msgstr "Naslov"
+
+msgid "This controls the title which the user sees during checkout."
+msgstr "Ovo kontroliše naslov koji korisnik vidi tokom naplate."
+
+msgid "Description"
+msgstr "Opis"
+
+msgid "This controls the description which the user sees during checkout."
+msgstr "Ovo kontroliše opis koji korisnik vidi tokom naplate."
+
+msgid "Authentication Settings"
+msgstr "Podešavanja Autentifikacije"
+
+msgid "Configure how to authenticate with Key2Pay API."
+msgstr "Konfigurišite kako da se autentifikujete sa Key2Pay API-jem."
+
+msgid "Authentication Method"
+msgstr "Metod Autentifikacije"
+
+msgid "Choose the authentication method for Key2Pay API."
+msgstr "Izaberite metod autentifikacije za Key2Pay API."
+
+msgid "Basic (Merchant ID + Password)"
+msgstr "Osnovni (ID Trgovca + Lozinka)"
+
+msgid "API Key"
+msgstr "API Ključ"
+
+msgid "Bearer Token"
+msgstr "Bearer Token"
+
+msgid "HMAC Signed"
+msgstr "HMAC Potpisan"
+
+msgid "Merchant ID"
+msgstr "ID Trgovca"
+
+msgid "Your Key2Pay Merchant ID (required for Basic authentication)."
+msgstr "Vaš Key2Pay ID Trgovca (potreban za osnovnu autentifikaciju)."
+
+msgid "Password"
+msgstr "Lozinka"
+
+msgid "Your Key2Pay API Password (required for Basic authentication)."
+msgstr "Vaša Key2Pay API lozinka (potrebna za osnovnu autentifikaciju)."
+
+msgid "Your Key2Pay API Key (required for API Key and HMAC authentication)."
+msgstr "Vaš Key2Pay API ključ (potreban za API ključ i HMAC autentifikaciju)."
+
+msgid "Secret Key"
+msgstr "Tajni Ključ"
+
+msgid "Your Key2Pay Secret Key (required for HMAC authentication and webhook verification)."
+msgstr "Vaš Key2Pay tajni ključ (potreban za HMAC autentifikaciju i webhook verifikaciju)."
+
+msgid "Access Token"
+msgstr "Token za Pristup"
+
+msgid "Your Key2Pay Access Token (required for Bearer authentication)."
+msgstr "Vaš Key2Pay token za pristup (potreban za Bearer autentifikaciju)."
+
+msgid "Debug Log"
+msgstr "Debug Log"
+
+msgid "Enable logging"
+msgstr "Omogući logovanje"
+
+msgid "Log Key2Pay redirect events."
+msgstr "Loguj Key2Pay preusmeravanje događaje."
+
+msgid "Payment approved successfully."
+msgstr "Plaćanje uspešno odobreno."
+
+msgid "Payment failed: Insufficient funds in the account."
+msgstr "Plaćanje neuspešno: Nedovoljno sredstava na računu."
+
+msgid "Payment failed: Do not honour - the transaction was declined by the bank."
+msgstr "Plaćanje neuspešno: Ne poštuj - transakcija je odbijena od strane banke."
+
+msgid "Payment failed: Restricted card - this card cannot be used for this transaction."
+msgstr "Plaćanje neuspešno: Ograničena kartica - ova kartica se ne može koristiti za ovu transakciju."
+
+msgid "Payment failed: Invalid transaction - the transaction details are not valid."
+msgstr "Plaćanje neuspešno: Nevažeća transakcija - detalji transakcije nisu validni."
+
+msgid "Payment failed: Transaction timeout - the request took too long to process."
+msgstr "Plaćanje neuspešno: Istek vremena transakcije - zahtev je predugo trajao za obradu."
+
+msgid "Payment processed with unknown response code."
+msgstr "Plaćanje obrađeno sa nepoznatim kodom odgovora."
+
+msgid "Your payment has been approved successfully!"
+msgstr "Vaše plaćanje je uspešno odobreno!"
+
+msgid "Sorry, your payment could not be processed due to insufficient funds. Please check your account balance and try again."
+msgstr "Žao nam je, vaše plaćanje nije moglo biti obrađeno zbog nedovoljno sredstava. Molimo proverite stanje vašeg računa i pokušajte ponovo."
+
+msgid "Sorry, your payment was declined by your bank. Please contact your bank or try a different payment method."
+msgstr "Žao nam je, vaše plaćanje je odbila vaša banka. Molimo kontaktirajte vašu banku ili pokušajte drugi način plaćanja."
+
+msgid "Sorry, this card cannot be used for this transaction. Please try a different card or contact your bank."
+msgstr "Žao nam je, ova kartica se ne može koristiti za ovu transakciju. Molimo pokušajte drugu karticu ili kontaktirajte vašu banku."
+
+msgid "Sorry, there was an issue with the transaction details. Please check your information and try again."
+msgstr "Žao nam je, došlo je do problema sa detaljima transakcije. Molimo proverite vaše informacije i pokušajte ponovo."
+
+msgid "Sorry, the payment request timed out. Please try again or contact support if the problem persists."
+msgstr "Žao nam je, zahtev za plaćanje je istekao. Molimo pokušajte ponovo ili kontaktirajte podršku ako se problem nastavi."
+
+msgid "Sorry, there was an unexpected issue with your payment. Please try again or contact support."
+msgstr "Žao nam je, došlo je do neočekivanog problema sa vašim plaćanjem. Molimo pokušajte ponovo ili kontaktirajte podršku."
+
+msgid "Your credit card payment was not successful. Please try again or contact support if you believe this is an error."
+msgstr "Vaše plaćanje kreditnom karticom nije bilo uspešno. Molimo pokušajte ponovo ili kontaktirajte podršku ako smatrate da je ovo greška." 

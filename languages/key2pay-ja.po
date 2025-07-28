@@ -1,0 +1,145 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Key2Pay Gateway 1.0.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-01-27 10:00+0000\n"
+"PO-Revision-Date: 2025-01-27 10:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Key2Pay Secure Redirect"
+msgstr "Key2Pay セキュアリダイレクト"
+
+msgid "Accept payments via Key2Pay with maximum security. Customers are redirected to Key2Pay's hosted payment page."
+msgstr "Key2Payを使用して最大限のセキュリティで支払いを受け付けます。お客様はKey2Payのホストされた支払いページにリダイレクトされます。"
+
+msgid "Pay securely using Key2Pay. You will be redirected to complete your payment securely."
+msgstr "Key2Payを使用して安全に支払いを行ってください。支払いを完了するために安全なページにリダイレクトされます。"
+
+msgid "Enable/Disable"
+msgstr "有効/無効"
+
+msgid "Enable Key2Pay Secure Redirect"
+msgstr "Key2Payセキュアリダイレクトを有効にする"
+
+msgid "Title"
+msgstr "タイトル"
+
+msgid "This controls the title which the user sees during checkout."
+msgstr "チェックアウト時にユーザーが表示するタイトルを制御します。"
+
+msgid "Description"
+msgstr "説明"
+
+msgid "This controls the description which the user sees during checkout."
+msgstr "チェックアウト時にユーザーが表示する説明を制御します。"
+
+msgid "Authentication Settings"
+msgstr "認証設定"
+
+msgid "Configure how to authenticate with Key2Pay API."
+msgstr "Key2Pay APIとの認証方法を設定します。"
+
+msgid "Authentication Method"
+msgstr "認証方法"
+
+msgid "Choose the authentication method for Key2Pay API."
+msgstr "Key2Pay APIの認証方法を選択してください。"
+
+msgid "Basic (Merchant ID + Password)"
+msgstr "基本（マーチャントID + パスワード）"
+
+msgid "API Key"
+msgstr "APIキー"
+
+msgid "Bearer Token"
+msgstr "ベアラートークン"
+
+msgid "HMAC Signed"
+msgstr "HMAC署名"
+
+msgid "Merchant ID"
+msgstr "マーチャントID"
+
+msgid "Your Key2Pay Merchant ID (required for Basic authentication)."
+msgstr "Key2PayマーチャントID（基本認証に必要）。"
+
+msgid "Password"
+msgstr "パスワード"
+
+msgid "Your Key2Pay API Password (required for Basic authentication)."
+msgstr "Key2Pay APIパスワード（基本認証に必要）。"
+
+msgid "Your Key2Pay API Key (required for API Key and HMAC authentication)."
+msgstr "Key2Pay APIキー（APIキー認証とHMAC認証に必要）。"
+
+msgid "Secret Key"
+msgstr "シークレットキー"
+
+msgid "Your Key2Pay Secret Key (required for HMAC authentication and webhook verification)."
+msgstr "Key2Payシークレットキー（HMAC認証とwebhook検証に必要）。"
+
+msgid "Access Token"
+msgstr "アクセストークン"
+
+msgid "Your Key2Pay Access Token (required for Bearer authentication)."
+msgstr "Key2Payアクセストークン（ベアラー認証に必要）。"
+
+msgid "Debug Log"
+msgstr "デバッグログ"
+
+msgid "Enable logging"
+msgstr "ログを有効にする"
+
+msgid "Log Key2Pay redirect events."
+msgstr "Key2Payリダイレクトイベントをログに記録します。"
+
+msgid "Payment approved successfully."
+msgstr "支払いが正常に承認されました。"
+
+msgid "Payment failed: Insufficient funds in the account."
+msgstr "支払い失敗：口座残高不足。"
+
+msgid "Payment failed: Do not honour - the transaction was declined by the bank."
+msgstr "支払い失敗：不承認 - 銀行によって取引が拒否されました。"
+
+msgid "Payment failed: Restricted card - this card cannot be used for this transaction."
+msgstr "支払い失敗：制限されたカード - このカードはこの取引に使用できません。"
+
+msgid "Payment failed: Invalid transaction - the transaction details are not valid."
+msgstr "支払い失敗：無効な取引 - 取引詳細が無効です。"
+
+msgid "Payment failed: Transaction timeout - the request took too long to process."
+msgstr "支払い失敗：取引タイムアウト - リクエストの処理に時間がかかりすぎました。"
+
+msgid "Payment processed with unknown response code."
+msgstr "不明な応答コードで支払いが処理されました。"
+
+msgid "Your payment has been approved successfully!"
+msgstr "お支払いが正常に承認されました！"
+
+msgid "Sorry, your payment could not be processed due to insufficient funds. Please check your account balance and try again."
+msgstr "申し訳ございませんが、残高不足のためお支払いを処理できませんでした。口座残高をご確認の上、再度お試しください。"
+
+msgid "Sorry, your payment was declined by your bank. Please contact your bank or try a different payment method."
+msgstr "申し訳ございませんが、お支払いが銀行によって拒否されました。銀行にお問い合わせいただくか、別の支払い方法をお試しください。"
+
+msgid "Sorry, this card cannot be used for this transaction. Please try a different card or contact your bank."
+msgstr "申し訳ございませんが、このカードはこの取引に使用できません。別のカードをお試しいただくか、銀行にお問い合わせください。"
+
+msgid "Sorry, there was an issue with the transaction details. Please check your information and try again."
+msgstr "申し訳ございませんが、取引詳細に問題がありました。情報をご確認の上、再度お試しください。"
+
+msgid "Sorry, the payment request timed out. Please try again or contact support if the problem persists."
+msgstr "申し訳ございませんが、支払いリクエストがタイムアウトしました。再度お試しいただくか、問題が続く場合はサポートにお問い合わせください。"
+
+msgid "Sorry, there was an unexpected issue with your payment. Please try again or contact support."
+msgstr "申し訳ございませんが、お支払いで予期しない問題が発生しました。再度お試しいただくか、サポートにお問い合わせください。"
+
+msgid "Your credit card payment was not successful. Please try again or contact support if you believe this is an error."
+msgstr "クレジットカードでのお支払いが成功しませんでした。再度お試しいただくか、エラーだと思われる場合はサポートにお問い合わせください。" 

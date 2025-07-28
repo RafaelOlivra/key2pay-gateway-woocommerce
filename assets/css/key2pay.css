@@ -1,0 +1,94 @@
+/* Key2Pay Payment Gateway Styles */
+
+
+/* Payment gateway icon sizing */
+
+
+/* Frontend (checkout) icon styling */
+
+div#key2pay_redirect *>img.woocommerce-list__item-image {
+    object-fit: cover;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+}
+
+.payment_method_key2pay_redirect>label>img {
+    display: none;
+}
+
+
+/* Admin/Backend icon styling */
+
+.wp-admin .payment_method_key2pay_redirect img,
+.wp-admin .wc_payment_methods .payment_method_key2pay_redirect img {
+    max-width: 80px !important;
+    max-height: 30px !important;
+    opacity: 0.8;
+}
+
+
+/* Payment form styling */
+
+.wc-key2pay-payment-form {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 15px;
+    margin: 10px 0;
+}
+
+.payment_method_key2pay_redirect>label>img {
+    max-width: 120px !important;
+}
+
+
+/* Loading state styling */
+
+.key2pay-loading {
+    display: none;
+    text-align: center;
+    padding: 20px;
+}
+
+.key2pay-loading.show {
+    display: block;
+}
+
+.key2pay-loading::after {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+
+/* Payment method description styling */
+
+.wc_payment_methods .payment_method_key2pay_redirect .payment_method_description {
+    color: #666;
+    font-size: 0.9em;
+    margin-top: 5px;
+}
+
+
+/* Responsive design */
+
+@media (max-width: 768px) {
+    .wc-key2pay-payment-form {
+        padding: 10px;
+    }
+}

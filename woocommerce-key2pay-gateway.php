@@ -3,11 +3,11 @@
 /**
  * Plugin Name: WooCommerce Key2Pay Gateway
  * Plugin URI:  https://axons.com/
- * Description: A WooCommerce payment gateway for Key2Pay.
- * Version:     1.0.0
- * Author:      AX
+ * Description: A secure redirect-based WooCommerce payment gateway for Key2Pay.
+ * Version:     1.0.1
+ * Author:      Axons
  * Author URI:  https://axons.com/
- * Text Domain: woocommerce-key2pay-gateway
+ * Text Domain: key2pay
  * Domain Path: /languages
  * WC requires at least: 8.0
  * WC tested up to: 8.0
@@ -40,15 +40,15 @@ class WC_Key2Pay_Gateway_Plugin
             return;
         }
 
-        // Include the main gateway class.
-        require_once plugin_dir_path(__FILE__) . 'includes/class-wc-key2pay-gateway.php';
-        require_once plugin_dir_path(__FILE__) . 'includes/class-wc-key2pay-instapay-gateway.php';
+        // Include the redirect gateway class.
+        require_once plugin_dir_path(__FILE__) . 'includes/class-wc-key2pay-auth.php';
+        require_once plugin_dir_path(__FILE__) . 'includes/class-wc-key2pay-redirect-gateway.php';
 
         // Add the Key2Pay Gateway to WooCommerce.
         add_filter('woocommerce_payment_gateways', array( $this, 'add_key2pay_gateway' ));
 
         // Load plugin text domain.
-        load_plugin_textdomain('woocommerce-key2pay-gateway', false, basename(dirname(__FILE__)) . '/languages');
+        load_plugin_textdomain('key2pay', false, basename(dirname(__FILE__)) . '/languages');
 
         // Enqueue scripts and styles for the checkout page.
         add_action('wp_enqueue_scripts', array( $this, 'key2pay_enqueue_checkout_scripts' ));
@@ -62,9 +62,10 @@ class WC_Key2Pay_Gateway_Plugin
      */
     public function key2pay_enqueue_checkout_scripts()
     {
+        $version = '1.0.0';
         if (is_checkout() && ! is_wc_endpoint_url()) {
-            wp_enqueue_script('key2pay-checkout', plugin_dir_url(__FILE__) . 'assets/js/key2pay-checkout.js', array( 'jquery' ), '1.0.0', true);
-            wp_enqueue_style('key2pay-styles', plugin_dir_url(__FILE__) . 'assets/css/key2pay.css', array(), '1.0.0');
+            wp_enqueue_script('key2pay-checkout', plugin_dir_url(__FILE__) . 'assets/js/key2pay-checkout.js', array( 'jquery' ), $version, true);
+            wp_enqueue_style('key2pay-styles', plugin_dir_url(__FILE__) . 'assets/css/key2pay.css', array(), $version);
         }
     }
 
@@ -76,7 +77,7 @@ class WC_Key2Pay_Gateway_Plugin
      */
     public function add_key2pay_gateway($gateways)
     {
-        $gateways[] = 'WC_Key2Pay_Gateway';
+        $gateways[] = 'WC_Key2Pay_Redirect_Gateway';
         return $gateways;
     }
 }
