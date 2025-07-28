@@ -11,6 +11,7 @@
  * Domain Path: /languages
  * WC requires at least: 8.0
  * WC tested up to: 8.0
+ * WC HPOS compatible: yes
  */
 
 if (! defined('ABSPATH')) {
@@ -52,6 +53,17 @@ class WC_Key2Pay_Gateway_Plugin
 
         // Enqueue scripts and styles for the checkout page.
         add_action('wp_enqueue_scripts', array( $this, 'key2pay_enqueue_checkout_scripts' ));
+
+        // Declare compatibility with WooCommerce custom order tables.
+        add_action('before_woocommerce_init', function () {
+            if (class_exists(\Automattic\WooCommerce\Utilities\FeaturesUtil::class)) {
+                \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
+                    'custom_order_tables',
+                    __FILE__,
+                    true
+                );
+            }
+        });
     }
 
     /**
