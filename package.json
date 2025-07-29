@@ -1,0 +1,24 @@
+{
+  "name": "key2pay-gateway-woocommerce",
+  "version": "1.0.0",
+  "description": "A secure, production-ready WooCommerce payment gateway for Key2Pay, featuring robust authentication, secure redirect payment flow, and webhook support.",
+  "main": "index.js",
+  "scripts": {
+    "build": "wp-scripts build",
+    "start": "wp-scripts start"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RafaelOlivra/key2pay-gateway-woocommerce.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/RafaelOlivra/key2pay-gateway-woocommerce/issues"
+  },
+  "homepage": "https://github.com/RafaelOlivra/key2pay-gateway-woocommerce#readme",
+  "devDependencies": {
+    "@wordpress/scripts": "^30.20.0"
+  }
+}

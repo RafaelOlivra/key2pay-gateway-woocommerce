@@ -71,8 +71,6 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         }
 
         // Parent (WC_Key2Pay_Gateway_Base) constructor already added common hooks, no need to redeclare.
-
-        //print_r($this);
     }
 
     /**
@@ -100,6 +98,15 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
 
         echo '<fieldset id="key2pay_thai_debit_form" class="wc-payment-form wc-payment-form-thai-debit">';
 
+        // We may want a dropdown for bank codes if Key2Pay provides a list
+        woocommerce_form_field('key2pay_thai_debit_bank_code', array(
+            'type'        => 'text', // Can be select if you have a list of banks
+            'label'       => __('Payer Bank Code', 'key2pay'),
+            'placeholder' => __('e.g., 014', 'key2pay'),
+            'required'    => true,
+            'default'     => '',
+        ), $this->get_posted_data('key2pay_thai_debit_bank_code'));
+
         woocommerce_form_field('key2pay_thai_debit_account_no', array(
             'type'        => 'text',
             'label'       => __('Payer Account Number', 'key2pay'),
@@ -115,15 +122,6 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
             'required'    => true,
             'default'     => '',
         ), $this->get_posted_data('key2pay_thai_debit_account_name'));
-
-        // You might want a dropdown for bank codes if Key2Pay provides a list
-        woocommerce_form_field('key2pay_thai_debit_bank_code', array(
-            'type'        => 'text', // Can be select if you have a list of banks
-            'label'       => __('Payer Bank Code', 'key2pay'),
-            'placeholder' => __('e.g., 014', 'key2pay'),
-            'required'    => true,
-            'default'     => '',
-        ), $this->get_posted_data('key2pay_thai_debit_bank_code'));
 
         echo '</fieldset>';
     }

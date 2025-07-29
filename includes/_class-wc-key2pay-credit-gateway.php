@@ -5,14 +5,14 @@ if (! defined('ABSPATH')) {
 }
 
 /**
- * WC_Key2Pay_Redirect_Gateway Class.
+ * WC_Key2Pay_Credit_Gateway Class.
  *
  * A secure redirect-based WooCommerce payment gateway for Key2Pay.
  * Customers are redirected to Key2Pay's hosted payment page.
  *
  * @extends WC_Payment_Gateway
  */
-class WC_Key2Pay_Redirect_Gateway extends WC_Payment_Gateway
+class WC_Key2Pay_Credit_Gateway extends WC_Payment_Gateway
 {
     public $id;
     public $icon;
@@ -59,8 +59,8 @@ class WC_Key2Pay_Redirect_Gateway extends WC_Payment_Gateway
         $this->log = wc_get_logger();
         $this->custom_log_file = WP_CONTENT_DIR . '/uploads/key2pay-gateway.log';
 
-        $this->id                 = 'key2pay_redirect'; // Unique ID for redirect gateway.
-        $this->icon               = apply_filters('woocommerce_key2pay_redirect_icon', plugin_dir_url(dirname(__FILE__)) . 'assets/images/key2pay-admin.webp');
+        $this->id                 = 'key2pay_credit'; // Unique ID for redirect gateway.
+        $this->icon               = apply_filters('woocommerce_key2pay_credit_icon', plugin_dir_url(dirname(__FILE__)) . 'assets/images/key2pay-admin.webp');
         $this->has_fields         = false; // Redirect-based payment method - no fields needed.
         $this->method_title       = __('Key2Pay Credit Card', 'key2pay');
         $this->method_description = __('Accept credit card payments via Key2Pay with maximum security. Customers are redirected to Key2Pay\'s hosted payment page.', 'key2pay');
@@ -99,7 +99,7 @@ class WC_Key2Pay_Redirect_Gateway extends WC_Payment_Gateway
         add_action('woocommerce_thankyou_' . $this->id, array($this, 'thankyou_page'));
 
         // Webhook listener for payment status updates.
-        add_action('woocommerce_api_wc_key2pay_redirect_gateway', array($this, 'handle_webhook_callback'));
+        add_action('woocommerce_api_wc_Key2Pay_Credit_Gateway', array($this, 'handle_webhook_callback'));
 
         // Add validation for API base URL
         add_action('woocommerce_admin_field_api_base_url', array($this, 'validate_api_base_url'));
@@ -225,7 +225,7 @@ class WC_Key2Pay_Redirect_Gateway extends WC_Payment_Gateway
         $currency         = $order->get_currency();
         $return_url       = $this->get_return_url($order);
         $customer_ip      = WC_Geolocation::get_ip_address();
-        $server_url       = home_url('/wc-api/wc_key2pay_redirect_gateway'); // Webhook endpoint for this gateway.
+        $server_url       = home_url('/wc-api/wc_Key2Pay_Credit_Gateway'); // Webhook endpoint for this gateway.
 
 
 

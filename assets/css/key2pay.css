@@ -6,22 +6,22 @@
 
 /* Frontend (checkout) icon styling */
 
-div#key2pay_redirect *>img.woocommerce-list__item-image {
+div#key2pay_credit *>img.woocommerce-list__item-image {
     object-fit: cover;
     width: 100% !important;
     height: 100% !important;
     max-width: 100% !important;
 }
 
-.payment_method_key2pay_redirect>label>img {
+.payment_method_key2pay_credit>label>img {
     display: none;
 }
 
 
 /* Admin/Backend icon styling */
 
-.wp-admin .payment_method_key2pay_redirect img,
-.wp-admin .wc_payment_methods .payment_method_key2pay_redirect img {
+.wp-admin .payment_method_key2pay_credit img,
+.wp-admin .wc_payment_methods .payment_method_key2pay_credit img {
     max-width: 80px !important;
     max-height: 30px !important;
     opacity: 0.8;
@@ -38,7 +38,7 @@ div#key2pay_redirect *>img.woocommerce-list__item-image {
     margin: 10px 0;
 }
 
-.payment_method_key2pay_redirect>label>img {
+.payment_method_key2pay_credit>label>img {
     max-width: 120px !important;
 }
 
@@ -78,7 +78,7 @@ div#key2pay_redirect *>img.woocommerce-list__item-image {
 
 /* Payment method description styling */
 
-.wc_payment_methods .payment_method_key2pay_redirect .payment_method_description {
+.wc_payment_methods .payment_method_key2pay_credit .payment_method_description {
     color: #666;
     font-size: 0.9em;
     margin-top: 5px;

@@ -10,14 +10,14 @@ if (! class_exists('WC_Key2Pay_Gateway_Base')) {
 }
 
 /**
- * WC_Key2Pay_Redirect_Gateway Class.
+ * WC_Key2Pay_Credit_Gateway Class.
  *
  * A secure redirect-based WooCommerce payment gateway for Key2Pay for Credit Cards.
  * Customers are redirected to Key2Pay's hosted payment page.
  *
  * @extends WC_Key2Pay_Gateway_Base
  */
-class WC_Key2Pay_Redirect_Gateway extends WC_Key2Pay_Gateway_Base
+class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
 {
     /**
      * Payment method type for redirect-based payments.
@@ -31,8 +31,8 @@ class WC_Key2Pay_Redirect_Gateway extends WC_Key2Pay_Gateway_Base
     public function __construct()
     {
         // 1. Set specific properties for THIS gateway. These MUST be set BEFORE parent::__construct().
-        $this->id                   = 'key2pay_redirect';
-        $this->icon                 = apply_filters('woocommerce_key2pay_redirect_icon', plugin_dir_url(dirname(__FILE__)) . 'assets/images/key2pay-admin.webp');
+        $this->id                   = 'key2pay_credit';
+        $this->icon                 = apply_filters('woocommerce_key2pay_credit_icon', plugin_dir_url(dirname(__FILE__)) . 'assets/images/key2pay-admin.webp');
         $this->has_fields           = false; // No fields on checkout for this gateway
         $this->method_title         = __('Key2Pay Credit Card', 'key2pay');
         $this->method_description   = __('Accept credit card payments via Key2Pay with maximum security. Customers are redirected to Key2Pay\'s hosted payment page.', 'key2pay');

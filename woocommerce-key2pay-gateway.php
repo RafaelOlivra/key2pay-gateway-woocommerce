@@ -18,6 +18,10 @@ if (! defined('ABSPATH')) {
     exit; // Exit if accessed directly.
 }
 
+defined('KEY2PAY_GATEWAY_VERSION') || define('KEY2PAY_GATEWAY_VERSION', '1.0.2');
+defined('KEY2PAY_PLUGIN_PATH') || define('KEY2PAY_PLUGIN_PATH', plugin_dir_path(__FILE__));
+defined('KEY2PAY_PLUGIN_URL') || define('KEY2PAY_PLUGIN_URL', plugin_dir_url(__FILE__));
+
 /**
  * The main plugin class.
  */
@@ -45,16 +49,16 @@ class WC_Key2Pay_Gateway_Plugin
         // The authentication handler must be loaded first.
         require_once plugin_dir_path(__FILE__) . 'includes/class-wc-key2pay-auth.php';
 
-        // The abstract base gateway must be loaded before any child gateways.
+        // Include the main gateway classes.
         require_once plugin_dir_path(__FILE__) . 'includes/abstract-wc-key2pay-gateway-base.php';
-        // Now include the specific payment gateway implementations.
-        require_once plugin_dir_path(__FILE__) . 'includes/class-wc-key2pay-redirect-gateway.php';
+        require_once plugin_dir_path(__FILE__) . 'includes/class-wc-key2pay-credit-gateway.php';
         require_once plugin_dir_path(__FILE__) . 'includes/class-wc-key2pay-thai-debit-gateway.php';
 
         // require_once plugin_dir_path(__FILE__) . 'includes/_class-wc-key2pay-redirect-gateway.php';
 
         // Add the Key2Pay Gateways to WooCommerce.
-        add_filter('woocommerce_payment_gateways', array( $this, 'add_key2pay_gateways' ));
+        add_filter('woocommerce_payment_gateways', array($this, 'add_key2pay_gateways'));
+        add_action('woocommerce_blocks_loaded', array($this, 'register_key2pay_payment_blocks'));
 
         // Load plugin text domain.
         load_plugin_textdomain('key2pay', false, basename(dirname(__FILE__)) . '/languages');
@@ -72,7 +76,7 @@ class WC_Key2Pay_Gateway_Plugin
                 );
             }
         });
-        
+
         // Add settings link on plugins page
         add_filter('plugin_action_links_' . plugin_basename(__FILE__), array( $this, 'add_plugin_action_links' ));
     }
@@ -85,10 +89,9 @@ class WC_Key2Pay_Gateway_Plugin
      */
     public function key2pay_enqueue_checkout_scripts()
     {
-        $version = '1.0.2'; // Update version
         if (is_checkout() && ! is_wc_endpoint_url()) {
-            wp_enqueue_script('key2pay-checkout', plugin_dir_url(__FILE__) . 'assets/js/key2pay-checkout.js', array( 'jquery' ), $version, true);
-            wp_enqueue_style('key2pay-styles', plugin_dir_url(__FILE__) . 'assets/css/key2pay.css', array(), $version);
+            wp_enqueue_script('key2pay-checkout', plugin_dir_url(__FILE__) . 'assets/js/key2pay-checkout.js', array( 'jquery' ), KEY2PAY_GATEWAY_VERSION, true);
+            wp_enqueue_style('key2pay-styles', plugin_dir_url(__FILE__) . 'assets/css/key2pay.css', array(), KEY2PAY_GATEWAY_VERSION);
         }
     }
 
@@ -101,9 +104,37 @@ class WC_Key2Pay_Gateway_Plugin
     public function add_key2pay_gateways($gateways)
     {
         // Add both redirect and Thai Debit gateways
-        $gateways[] = 'WC_Key2Pay_Redirect_Gateway';
+        $gateways[] = 'WC_Key2Pay_Credit_Gateway';
         $gateways[] = 'WC_Key2Pay_Thai_Debit_Gateway';
         return $gateways;
+    }
+
+    /**
+     * Register the Key2Pay payment blocks.
+     *
+     * This function checks if the WooCommerce Blocks integration is available,
+     * then registers the Key2Pay payment blocks for credit and Thai debit.
+     */
+    public function register_key2pay_payment_blocks()
+    {
+        if (!class_exists('\\Automattic\\WooCommerce\\Blocks\\Payments\\Integrations\\AbstractPaymentMethodType')) {
+            return;
+        }
+
+        add_action(
+            'woocommerce_blocks_payment_method_type_registration',
+            function ($payment_method_registry) {
+                require_once plugin_dir_path(__FILE__) . 'includes/blocks/class-wc-gateway-key2pay-credit-block.php';
+                require_once plugin_dir_path(__FILE__) . 'includes/blocks/class-wc-gateway-key2pay-thai-debit-block.php';
+
+                $payment_method_registry->register(
+                    new WC_Gateway_Key2Pay_Credit_Block()
+                );
+                $payment_method_registry->register(
+                    new WC_Gateway_Key2Pay_Thai_Debit_Block()
+                );
+            }
+        );
     }
 
     /**
@@ -112,8 +143,9 @@ class WC_Key2Pay_Gateway_Plugin
      * @param array $links Plugin action links.
      * @return array Updated plugin action links.
      */
-    public function add_plugin_action_links($links) {
-        $settings_link = '<a href="' . admin_url('admin.php?page=wc-settings&tab=checkout&section=key2pay_redirect') . '">' . __('Settings', 'key2pay') . '</a>';
+    public function add_plugin_action_links($links)
+    {
+        $settings_link = '<a href="' . admin_url('admin.php?page=wc-settings&tab=checkout&section=key2pay_credit') . '">' . __('Settings', 'key2pay') . '</a>';
         array_unshift($links, $settings_link);
         return $links;
     }
