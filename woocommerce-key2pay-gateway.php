@@ -47,21 +47,21 @@ class WC_Key2Pay_Gateway_Plugin
 
         // Include necessary classes in the correct order.
         // The authentication handler must be loaded first.
-        require_once plugin_dir_path(__FILE__) . 'includes/class-wc-key2pay-auth.php';
+        require_once KEY2PAY_PLUGIN_PATH . 'includes/class-wc-key2pay-auth.php';
 
         // Include the main gateway classes.
-        require_once plugin_dir_path(__FILE__) . 'includes/abstract-wc-key2pay-gateway-base.php';
-        require_once plugin_dir_path(__FILE__) . 'includes/class-wc-key2pay-credit-gateway.php';
-        require_once plugin_dir_path(__FILE__) . 'includes/class-wc-key2pay-thai-debit-gateway.php';
+        require_once KEY2PAY_PLUGIN_PATH . 'includes/abstract-wc-key2pay-gateway-base.php';
+        require_once KEY2PAY_PLUGIN_PATH . 'includes/class-wc-key2pay-credit-gateway.php';
+        require_once KEY2PAY_PLUGIN_PATH . 'includes/class-wc-key2pay-thai-debit-gateway.php';
 
-        // require_once plugin_dir_path(__FILE__) . 'includes/_class-wc-key2pay-redirect-gateway.php';
+        // require_once KEY2PAY_PLUGIN_PATH . 'includes/_class-wc-key2pay-redirect-gateway.php';
 
         // Add the Key2Pay Gateways to WooCommerce.
         add_filter('woocommerce_payment_gateways', array($this, 'add_key2pay_gateways'));
         add_action('woocommerce_blocks_loaded', array($this, 'register_key2pay_payment_blocks'));
 
         // Load plugin text domain.
-        load_plugin_textdomain('key2pay', false, basename(dirname(__FILE__)) . '/languages');
+        load_plugin_textdomain('key2pay', false, KEY2PAY_PLUGIN_PATH . '/languages');
 
         // Enqueue scripts and styles for the checkout page.
         add_action('wp_enqueue_scripts', array( $this, 'key2pay_enqueue_checkout_scripts' ));
@@ -90,8 +90,8 @@ class WC_Key2Pay_Gateway_Plugin
     public function key2pay_enqueue_checkout_scripts()
     {
         if (is_checkout() && ! is_wc_endpoint_url()) {
-            wp_enqueue_script('key2pay-checkout', plugin_dir_url(__FILE__) . 'assets/js/key2pay-checkout.js', array( 'jquery' ), KEY2PAY_GATEWAY_VERSION, true);
-            wp_enqueue_style('key2pay-styles', plugin_dir_url(__FILE__) . 'assets/css/key2pay.css', array(), KEY2PAY_GATEWAY_VERSION);
+            wp_enqueue_script('key2pay-checkout', KEY2PAY_PLUGIN_URL . 'assets/js/key2pay-checkout.js', array( 'jquery' ), KEY2PAY_GATEWAY_VERSION, true);
+            wp_enqueue_style('key2pay-styles', KEY2PAY_PLUGIN_URL . 'assets/css/key2pay.css', array(), KEY2PAY_GATEWAY_VERSION);
         }
     }
 
@@ -124,8 +124,8 @@ class WC_Key2Pay_Gateway_Plugin
         add_action(
             'woocommerce_blocks_payment_method_type_registration',
             function ($payment_method_registry) {
-                require_once plugin_dir_path(__FILE__) . 'includes/blocks/class-wc-gateway-key2pay-credit-block.php';
-                require_once plugin_dir_path(__FILE__) . 'includes/blocks/class-wc-gateway-key2pay-thai-debit-block.php';
+                require_once KEY2PAY_PLUGIN_PATH . 'includes/blocks/class-wc-gateway-key2pay-credit-block.php';
+                require_once KEY2PAY_PLUGIN_PATH . 'includes/blocks/class-wc-gateway-key2pay-thai-debit-block.php';
 
                 $payment_method_registry->register(
                     new WC_Gateway_Key2Pay_Credit_Block()
