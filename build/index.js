@@ -212,7 +212,7 @@ registerPaymentMethod({
 });
 
 /**
- * ### Thai Credit Card Setup ###
+ * ### Credit Card Setup ###
  */
 
 const ThaiCreditFieldsContent = () => {
