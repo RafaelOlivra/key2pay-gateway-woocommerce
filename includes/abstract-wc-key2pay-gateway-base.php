@@ -582,18 +582,22 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
     protected function get_user_friendly_error_message($code)
     {
         switch ($code) {
-            case '0':
+            case self::CODE_APPROVED:
                 return __('Your payment has been approved successfully!', 'key2pay');
-            case '51':
+            case self::CODE_INSUFFICIENT_FUNDS:
                 return __('Sorry, your payment could not be processed due to insufficient funds. Please check your account balance and try again.', 'key2pay');
-            case '05':
+            case self::CODE_DO_NOT_HONOUR:
                 return __('Sorry, your payment was declined by your bank. Please contact your bank or try a different payment method.', 'key2pay');
-            case '62':
+            case self::CODE_RESTRICTED_CARD:
                 return __('Sorry, this card cannot be used for this transaction. Please try a different card or contact your bank.', 'key2pay');
-            case '12':
+            case self::CODE_INVALID_TRANSACTION:
                 return __('Sorry, there was an issue with the transaction details. Please check your information and try again.', 'key2pay');
-            case '9998':
+            case self::CODE_TRANSACTION_TIMEOUT:
                 return __('Sorry, the payment request timed out. Please try again or contact support if the problem persists.', 'key2pay');
+            case self::CODE_DEBIT_PENDING:
+                return __('Sorry, your payment is still processing. Please wait for confirmation.', 'key2pay');
+            case self::CODE_DEBIT_FAILED:
+                return __('Sorry, your payment could not be processed. Please try again or contact support.', 'key2pay');
             default:
                 return __('Sorry, there was an unexpected issue with your payment. Please try again or contact support.', 'key2pay');
         }
