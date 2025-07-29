@@ -96,7 +96,7 @@ msgstr "デバッグログ"
 msgid "Enable logging"
 msgstr "ログを有効にする"
 
-msgid "Log Key2Pay redirect events."
+msgid "Log Key2Pay Credit Card events."
 msgstr "Key2Payリダイレクトイベントをログに記録します。"
 
 msgid "Payment approved successfully."

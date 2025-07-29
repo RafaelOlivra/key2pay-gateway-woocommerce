@@ -123,13 +123,19 @@ const {
  * ### Thai Debit Setup ###
  */
 
-const ThaiDebitFieldsContent = ({
-  onPaymentSetup
-}) => {
+const ThaiDebitFieldsContent = props => {
+  const {
+    onPaymentSetup,
+    components
+  } = props;
+  const {
+    PaymentMethodLabel
+  } = components;
   const [accountNo, setAccountNo] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)("");
   const [accountName, setAccountName] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)("");
   const [bankCode, setBankCode] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_1__.useState)("");
   const isValid = accountNo && accountName && bankCode;
+  console.log(props);
   if (onPaymentSetup) {
     onPaymentSetup(isValid ? {
       type: "complete",
@@ -144,11 +150,13 @@ const ThaiDebitFieldsContent = ({
   }
   return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("div", {
     className: "k2p-thai-debit",
-    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("div", {
+    children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)(PaymentMethodLabel, {
+      text: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)("Pay securely with Thai Debit via Key2Pay. Please enter your bank details below.", "key2pay")
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("div", {
       className: "k2p-field-group",
       children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("p", {
         children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("label", {
-          children: [(0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)("Payer Bank Code", "key2pay"), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("input", {
+          children: [(0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)("Bank Code", "key2pay"), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("input", {
             type: "text",
             value: bankCode,
             onChange: e => setBankCode(e.target.value),
@@ -161,7 +169,7 @@ const ThaiDebitFieldsContent = ({
       className: "k2p-field-group",
       children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("p", {
         children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("label", {
-          children: [(0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)("Payer Account Number", "key2pay"), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("input", {
+          children: [(0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)("Bank Account Number", "key2pay"), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("input", {
             type: "text",
             value: accountNo,
             onChange: e => setAccountNo(e.target.value),
@@ -174,7 +182,7 @@ const ThaiDebitFieldsContent = ({
       className: "k2p-field-group",
       children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("p", {
         children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsxs)("label", {
-          children: [(0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)("Payer Account Name", "key2pay"), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("input", {
+          children: [(0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)("Bank Account Name", "key2pay"), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("input", {
             type: "text",
             value: accountName,
             onChange: e => setAccountName(e.target.value),
@@ -215,14 +223,20 @@ registerPaymentMethod({
  * ### Credit Card Setup ###
  */
 
-const ThaiCreditFieldsContent = () => {
+const ThaiCreditFieldsContent = props => {
+  const {
+    onPaymentSetup,
+    components
+  } = props;
+  const {
+    PaymentMethodLabel
+  } = components;
+  console.log(PaymentMethodLabel);
+  console.log(props);
   return /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("div", {
     className: "k2p-credit-card",
-    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("div", {
-      className: "k2p-field-group",
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("p", {
-        children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)("You'll be redirected to complete Credit Card payment after placing the order.", "key2pay")
-      })
+    children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)(PaymentMethodLabel, {
+      text: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)("Pay securely with your credit card via Key2Pay. You will be redirected to complete your payment securely.", "key2pay")
     })
   });
 };

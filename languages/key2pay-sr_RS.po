@@ -96,7 +96,7 @@ msgstr "Debug Log"
 msgid "Enable logging"
 msgstr "Omogući logovanje"
 
-msgid "Log Key2Pay redirect events."
+msgid "Log Key2Pay Credit Card events."
 msgstr "Loguj Key2Pay preusmeravanje događaje."
 
 msgid "Payment approved successfully."

@@ -139,7 +139,7 @@ msgid "Enable logging"
 msgstr ""
 
 #: includes/class-wc-key2pay-redirect-gateway.php:183
-msgid "Log Key2Pay redirect events."
+msgid "Log Key2Pay Credit Card events."
 msgstr ""
 
 #: includes/class-wc-key2pay-redirect-gateway.php:750

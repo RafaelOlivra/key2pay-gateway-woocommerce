@@ -6,12 +6,17 @@ import { useState } from "@wordpress/element";
  * ### Thai Debit Setup ###
  */
 
-const ThaiDebitFieldsContent = ({ onPaymentSetup }) => {
+const ThaiDebitFieldsContent = (props) => {
+    const { onPaymentSetup, components } = props;
+    const { PaymentMethodLabel } = components;
+
     const [accountNo, setAccountNo] = useState("");
     const [accountName, setAccountName] = useState("");
     const [bankCode, setBankCode] = useState("");
 
     const isValid = accountNo && accountName && bankCode;
+
+    console.log(props);
 
     if (onPaymentSetup) {
         onPaymentSetup(
@@ -30,10 +35,16 @@ const ThaiDebitFieldsContent = ({ onPaymentSetup }) => {
 
     return (
         <div className='k2p-thai-debit'>
+            <PaymentMethodLabel
+                text={__(
+                    "Pay securely with Thai Debit via Key2Pay. Please enter your bank details below.",
+                    "key2pay"
+                )}
+            />
             <div className='k2p-field-group'>
                 <p>
                     <label>
-                        {__("Payer Bank Code", "key2pay")}
+                        {__("Bank Code", "key2pay")}
                         <input
                             type='text'
                             value={bankCode}
@@ -47,7 +58,7 @@ const ThaiDebitFieldsContent = ({ onPaymentSetup }) => {
             <div className='k2p-field-group'>
                 <p>
                     <label>
-                        {__("Payer Account Number", "key2pay")}
+                        {__("Bank Account Number", "key2pay")}
                         <input
                             type='text'
                             value={accountNo}
@@ -61,7 +72,7 @@ const ThaiDebitFieldsContent = ({ onPaymentSetup }) => {
             <div className='k2p-field-group'>
                 <p>
                     <label>
-                        {__("Payer Account Name", "key2pay")}
+                        {__("Bank Account Name", "key2pay")}
                         <input
                             type='text'
                             value={accountName}
@@ -102,17 +113,21 @@ registerPaymentMethod({
  * ### Credit Card Setup ###
  */
 
-const ThaiCreditFieldsContent = () => {
+const ThaiCreditFieldsContent = (props) => {
+    const { onPaymentSetup, components } = props;
+    const { PaymentMethodLabel } = components;
+
+    console.log(PaymentMethodLabel);
+    console.log(props);
+
     return (
         <div className='k2p-credit-card'>
-            <div className='k2p-field-group'>
-                <p>
-                    {__(
-                        "You'll be redirected to complete Credit Card payment after placing the order.",
-                        "key2pay"
-                    )}
-                </p>
-            </div>
+            <PaymentMethodLabel
+                text={__(
+                    "Pay securely with your credit card via Key2Pay. You will be redirected to complete your payment securely.",
+                    "key2pay"
+                )}
+            />
         </div>
     );
 };

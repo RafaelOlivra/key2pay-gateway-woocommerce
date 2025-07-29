@@ -23,7 +23,7 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
      * Payment method type for redirect-based payments.
      * CARD = Credit card payments only
      */
-    public const PAYMENT_METHOD_TYPE = 'CARD';
+    public const PAYMENT_METHOD_TYPE = 'BANKCARD';
 
     /**
      * Constructor for the gateway.
@@ -58,17 +58,7 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
         $this->disable_url_fallback = 'yes' === $this->get_option('disable_url_fallback');
 
         // 4. Initialize authentication handler using the retrieved settings.
-        try {
-            // Note: The auth_type is dynamically chosen from admin settings for flexibility
-            $this->auth_handler = new WC_Key2Pay_Auth($this->auth_type);
-            $this->auth_handler->set_credentials(array(
-                'merchant_id'  => $this->merchant_id,
-                'password'     => $this->password,
-            ));
-            $this->auth_handler->set_debug($this->debug);
-        } catch (Exception $e) {
-            $this->log->error('Key2Pay Redirect Gateway Error: Failed to initialize auth handler: ' . $e->getMessage(), array('source' => $this->id));
-        }
+        $this->setup_authentication_handler();
 
         // Parent (WC_Key2Pay_Gateway_Base) constructor already added common hooks, no need to redeclare.
     }
@@ -91,7 +81,7 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
         if ($this->description) {
             echo wpautop(wp_kses_post($this->description));
         } else {
-            echo wpautop(wp_kses_post(__('Pay securely with your credit card via Key2Pay. You will be redirected to complete your payment securely.', 'woocommerce-key2pay-gateway')));
+            echo wpautop(wp_kses_post(__('Pay securely with your credit card via Key2Pay. You will be redirected to complete your payment securely.', 'key2pay')));
         }
     }
 
@@ -110,11 +100,12 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
             $this->log_to_file(sprintf('Processing redirect payment for order #%s.', $order_id));
         }
 
-        // Prepare data for Key2Pay redirect API request.
+        // Prepare data for Key2Pay Credit Card API request.
         $amount             = (float) $order->get_total();
         $currency           = $order->get_currency();
-        $return_url         = $this->get_return_url($order);
         $customer_ip        = WC_Geolocation::get_ip_address();
+        $endpoint           = $this->build_api_url('/PaymentToken/Create');
+        $return_url         = $this->get_return_url($order);
         $server_url         = home_url('/wc-api/' . strtolower($this->id)); // Webhook endpoint for this gateway.
 
         // Initial request data for API call
@@ -125,6 +116,7 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
             'bill_amount'           => $amount,
             'returnUrl'             => $return_url,
             'returnUrl_on_failure'  => $order->get_checkout_payment_url(false),
+            'serverUrl'             => $server_url,
             'productdesc'           => sprintf(__('Order %s from %s', 'key2pay'), $order->get_order_number(), get_bloginfo('name')),
             'bill_customerip'       => $customer_ip,
             'bill_phone'            => $order->get_billing_phone() ?: '',
@@ -134,17 +126,11 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
             'bill_state'            => $order->get_billing_state() ?: '',
             'bill_address'          => $order->get_billing_address_1() ?: '',
             'bill_zip'              => $order->get_billing_postcode(),
-            'serverUrl'             => $server_url,
             'lang'                  => self::DEFAULT_LANGUAGE,
         );
 
         // Add authentication data to request body if needed (e.g., Basic Auth)
         $request_data = $this->auth_handler->add_auth_to_body($request_data);
-
-        // Sign the request if using HMAC
-        if ($this->auth_type === WC_Key2Pay_Auth::AUTH_TYPE_SIGNED) {
-            $request_data = $this->auth_handler->sign_request($request_data, '/PaymentToken/Create');
-        }
 
         // Get authentication headers (e.g., API Key, Bearer Token)
         $headers = array('Content-Type' => 'application/json');
@@ -152,34 +138,21 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
 
         // Log the complete request data before sending
         $this->log_to_file('Key2Pay API Request: Preparing to send payment request for order #' . $order_id);
-        $this->log_to_file('Key2Pay API Request: API URL: ' . $this->build_api_url('/PaymentToken/Create'));
+        $this->log_to_file('Key2Pay API Request: API URL: ' . $endpoint);
 
-        $safe_headers = $headers;
-        if (isset($safe_headers['Authorization'])) {
-            $safe_headers['Authorization'] = '[REDACTED]';
-        }
+        // Redact sensitive data in headers for logging
+        $safe_headers = $this->redact_sensitive_data($headers);
         $this->log_to_file('Key2Pay API Request: Headers: ' . print_r($safe_headers, true));
 
-        $safe_request_data = $request_data;
-        if (isset($safe_request_data['password'])) {
-            $safe_request_data['password'] = '[REDACTED]';
-        }
-        if (isset($safe_request_data['merchantid'])) {
-            $safe_request_data['merchantid'] = '[REDACTED]';
-        }
-        if (isset($safe_request_data['api_key'])) {
-            $safe_request_data['api_key'] = '[REDACTED]';
-        } // For API key in body
-        if (isset($safe_request_data['secret_key'])) {
-            $safe_request_data['secret_key'] = '[REDACTED]';
-        } // For HMAC
+        // Redact sensitive data in request data for logging
+        $safe_request_data = $this->redact_sensitive_data($request_data);
         $this->log_to_file('Key2Pay API Request: Request Data: ' . print_r($safe_request_data, true));
         $this->log_to_file('Key2Pay API Request: Webhook URL being sent: ' . $server_url);
         $this->log_to_file('Key2Pay API Request: JSON payload length: ' . strlen(json_encode($request_data)) . ' characters');
 
-        // Make the API call to Key2Pay redirect endpoint.
+        // Make the API call to Key2Pay Credit Card endpoint.
         $response = wp_remote_post(
-            $this->build_api_url('/PaymentToken/Create'),
+            $endpoint,
             array(
                 'method'    => 'POST',
                 'headers'   => $headers,
@@ -215,12 +188,16 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
                 $order->update_status('pending', __('Awaiting Key2Pay payment confirmation.', 'key2pay'));
 
                 // Store Key2Pay transaction details.
-                if (isset($data->transactionid)) {
+                if (!empty($data->transactionid)) {
                     $order->update_meta_data('_key2pay_transaction_id', $data->transactionid);
                 }
-                if (isset($data->trackid)) {
+                if (!empty($data->trackid)) {
                     $order->update_meta_data('_key2pay_track_id', $data->trackid);
                 }
+                if (!empty($data->token)) {
+                    $order->update_meta_data('_key2pay_token', $data->token);
+                }
+
                 $order->save();
 
                 return array(

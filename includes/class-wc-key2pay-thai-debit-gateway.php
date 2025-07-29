@@ -56,19 +56,7 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         $this->disable_url_fallback = 'yes' === $this->get_option('disable_url_fallback');
 
         // 4. Initialize authentication handler using the retrieved settings.
-        try {
-            // For Thai Debit, we explicitly use Basic Auth per the API docs for `transaction/s2s`.
-            // We ensure that the auth_type property is set correctly here for the handler.
-            $this->auth_handler = new WC_Key2Pay_Auth(WC_Key2Pay_Auth::AUTH_TYPE_BASIC); // Always basic for Thai Debit API
-            $this->auth_handler->set_credentials(array(
-                'merchant_id'  => $this->merchant_id,
-                'password'     => $this->password,
-                // Other auth methods are not applicable for Thai Debit /transaction/s2s
-            ));
-            $this->auth_handler->set_debug($this->debug);
-        } catch (Exception $e) {
-            $this->log->error('Key2Pay Thai Debit Gateway Error: Failed to initialize auth handler: ' . $e->getMessage(), array('source' => $this->id));
-        }
+        $this->setup_authentication_handler();
 
         // Parent (WC_Key2Pay_Gateway_Base) constructor already added common hooks, no need to redeclare.
     }
@@ -93,7 +81,7 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         if ($this->description) {
             echo wpautop(wp_kses_post($this->description));
         } else {
-            echo wpautop(wp_kses_post(__('Pay securely with Thai Debit via Key2Pay. Please enter your bank details below.', 'woocommerce-key2pay-gateway')));
+            echo wpautop(wp_kses_post(__('Pay securely with Thai Debit via Key2Pay. Please enter your bank details below.', 'key2pay')));
         }
 
         echo '<fieldset id="key2pay_thai_debit_form" class="wc-payment-form wc-payment-form-thai-debit">';
@@ -101,7 +89,7 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         // We may want a dropdown for bank codes if Key2Pay provides a list
         woocommerce_form_field('key2pay_thai_debit_bank_code', array(
             'type'        => 'text', // Can be select if you have a list of banks
-            'label'       => __('Payer Bank Code', 'key2pay'),
+            'label'       => __('Bank Code', 'key2pay'),
             'placeholder' => __('e.g., 014', 'key2pay'),
             'required'    => true,
             'default'     => '',
@@ -109,7 +97,7 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
 
         woocommerce_form_field('key2pay_thai_debit_account_no', array(
             'type'        => 'text',
-            'label'       => __('Payer Account Number', 'key2pay'),
+            'label'       => __('Bank Account Number', 'key2pay'),
             'placeholder' => __('Enter your debit account number', 'key2pay'),
             'required'    => true,
             'default'     => '',
@@ -117,7 +105,7 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
 
         woocommerce_form_field('key2pay_thai_debit_account_name', array(
             'type'        => 'text',
-            'label'       => __('Payer Account Name', 'key2pay'),
+            'label'       => __('Bank Account Name', 'key2pay'),
             'placeholder' => __('Name on your debit account', 'key2pay'),
             'required'    => true,
             'default'     => '',
@@ -181,8 +169,9 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         // Prepare data for Key2Pay Thai Debit API request.
         $amount           = (float) $order->get_total();
         $currency         = $order->get_currency();
-        $return_url       = $this->get_return_url($order);
         $customer_ip      = WC_Geolocation::get_ip_address();
+        $endpoint         = $this->build_api_url('/transaction/s2s');
+        $return_url       = $this->get_return_url($order);
         $server_url       = home_url('/wc-api/' . strtolower($this->id)); // Webhook endpoint for this gateway.
 
         $request_data = array(
@@ -211,51 +200,27 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         // Add authentication data to request body (for Basic Auth, merchantid and password)
         $request_data = $this->auth_handler->add_auth_to_body($request_data);
 
-        // Sign the request if using HMAC (though Thai Debit API spec implies Basic)
-        if ($this->auth_type === WC_Key2Pay_Auth::AUTH_TYPE_SIGNED) {
-            $request_data = $this->auth_handler->sign_request($request_data, '/transaction/s2s');
-        }
-
         // Get authentication headers (e.g., API Key, Bearer Token - empty for Basic Auth)
         $headers = array('Content-Type' => 'application/json');
         $headers = array_merge($headers, $this->auth_handler->get_auth_headers());
 
         // Log the complete request data before sending
         $this->log_to_file('Key2Pay Thai Debit API Request: Preparing to send payment request for order #' . $order_id);
-        $this->log_to_file('Key2Pay Thai Debit API Request: API URL: ' . $this->build_api_url('/transaction/s2s'));
+        $this->log_to_file('Key2Pay Thai Debit API Request: API URL: ' . $endpoint);
 
-        $safe_headers = $headers;
-        if (isset($safe_headers['Authorization'])) {
-            $safe_headers['Authorization'] = '[REDACTED]';
-        }
-        $this->log_to_file('Key2Pay Thai Debit API Request: Headers: ' . print_r($safe_headers, true));
+        // Redact sensitive data in headers for logging
+        $safe_headers = $this->redact_sensitive_data($headers);
+        $this->log_to_file('Key2Pay API Request: Headers: ' . print_r($safe_headers, true));
 
-        $safe_request_data = $request_data;
-        if (isset($safe_request_data['password'])) {
-            $safe_request_data['password'] = '[REDACTED]';
-        }
-        if (isset($safe_request_data['merchantid'])) {
-            $safe_request_data['merchantid'] = '[REDACTED]';
-        }
-        if (isset($safe_request_data['api_key'])) {
-            $safe_request_data['api_key'] = '[REDACTED]';
-        } // For API key in body
-        if (isset($safe_request_data['secret_key'])) {
-            $safe_request_data['secret_key'] = '[REDACTED]';
-        } // For HMAC
-        if (isset($safe_request_data['payer_account_no'])) {
-            $safe_request_data['payer_account_no'] = '[REDACTED]';
-        }
-        if (isset($safe_request_data['payer_account_name'])) {
-            $safe_request_data['payer_account_name'] = '[REDACTED]';
-        }
+        // Redact sensitive data in request data for logging
+        $safe_request_data = $this->redact_sensitive_data($request_data);
         $this->log_to_file('Key2Pay Thai Debit API Request: Request Data: ' . print_r($safe_request_data, true));
         $this->log_to_file('Key2Pay Thai Debit API Request: Webhook URL being sent: ' . $server_url);
         $this->log_to_file('Key2Pay Thai Debit API Request: JSON payload length: ' . strlen(json_encode($request_data)) . ' characters');
 
         // Make the API call to Key2Pay Thai Debit endpoint.
         $response = wp_remote_post(
-            $this->build_api_url('/transaction/s2s'),
+            $endpoint,
             array(
                 'method'    => 'POST',
                 'headers'   => $headers,

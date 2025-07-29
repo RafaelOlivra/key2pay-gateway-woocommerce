@@ -31,7 +31,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
     public $debug; // Loaded from settings
     public $log;
     // public $form_fields; // Managed by WC_Settings_API - DO NOT redeclare
-    public $auth_handler;
+    public WC_Key2Pay_Auth $auth_handler;
     public $disable_url_fallback; // Loaded from settings
     public $custom_log_file;
 
@@ -77,6 +77,32 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
         // All other properties like $this->title, $this->description, $this->enabled,
         // and credentials will be loaded in the concrete child's constructor
         // AFTER it calls parent::__construct() and init_settings() has run.
+    }
+
+    /**
+     * Setup the authentication handler.
+     * This initializes the authentication handler based on the auth type.
+     * Child classes should call this after setting $this->auth_type and credentials.
+     *
+     * @return WC_Key2Pay_Auth The authentication handler instance.
+     */
+    public function setup_authentication_handler(): WC_Key2Pay_Auth
+    {
+        if (!$this->auth_handler) {
+            try {
+                // Initialize the authentication handler based on the auth type.
+                $this->auth_handler = new WC_Key2Pay_Auth(WC_Key2Pay_Auth::AUTH_TYPE_BASIC); // Only Basic Auth is supported in this base class.
+                $this->auth_handler->set_credentials(array(
+                    'merchant_id'  => $this->merchant_id,
+                    'password'     => $this->password,
+                ));
+                $this->auth_handler->set_debug($this->debug);
+            } catch (Exception $e) {
+                $this->log->error('Key2Pay Error: Failed to initialize auth handler: ' . $e->getMessage(), array('source' => $this->id));
+            }
+        }
+
+        return $this->auth_handler;
     }
 
     /**
@@ -178,7 +204,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
         if ($this->description) {
             echo wpautop(wp_kses_post($this->description));
         } else {
-            echo wpautop(wp_kses_post(__('This payment method requires no extra fields on checkout.', 'woocommerce-key2pay-gateway')));
+            echo wpautop(wp_kses_post(__('This payment method requires no extra fields on checkout.', 'key2pay')));
         }
     }
 
@@ -667,6 +693,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
      * This method is abstract as it might involve different APIs or parameters
      * depending on the payment method type, although often it's a common refund API.
      * For now, we'll delegate it to a potential 'main' gateway or make it concrete if common.
+     * @see https://key2pay.readme.io/reference/refund
      *
      * @param int    $order_id Order ID.
      * @param float  $amount Refund amount.
@@ -675,46 +702,38 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
      */
     public function process_refund($order_id, $amount = null, $reason = '')
     {
-        // This should ideally call a shared API client for refunds,
-        // rather than instantiating a specific gateway.
-        // For demonstration, let's assume `WC_Key2Pay_API_Client` handles refunds.
-        // If not, this can be made abstract, or directly implemented if all methods refund similarly.
-
         // Retrieve transaction ID from order meta
         $order = wc_get_order($order_id);
         $transaction_id = $order->get_meta('_key2pay_transaction_id');
+        $amount = (float) $order->get_total();
+        $currency = $order->get_currency();
+        $email = $order->get_billing_email();
+        $endpoint = $this->build_api_url('/transaction/refund');
 
         if (empty($transaction_id)) {
             $this->log->error('Key2Pay Refund: No transaction ID found for order #' . $order_id, array('source' => $this->id));
             return false;
         }
 
-        // Example: Call a hypothetical shared API client for refunds
-        // You would need to implement WC_Key2Pay_API_Client or similar.
-        // For now, let's make a mock call or re-use existing post logic if Key2Pay refund is just another endpoint.
-
+        // Prepare refund data
         $refund_data = array(
-            'merchantid'    => $this->merchant_id,
-            'password'      => $this->password, // Or other auth credentials based on auth_type
             'transactionid' => $transaction_id,
-            'amount'        => $amount,
+            'tranid'        => $transaction_id,
+            'trackid'       => $email, // Using email as track ID for refund
+            'bill_amount'   => $amount,
+            'bill_currencycode' => $currency,
             'reason'        => $reason,
-            // Include authentication fields for signing if AUTH_TYPE_SIGNED
         );
-
-        // Sign the request if using HMAC
-        if ($this->auth_type === WC_Key2Pay_Auth::AUTH_TYPE_SIGNED) {
-            $refund_data = $this->auth_handler->sign_request($refund_data, '/transaction/refund'); // Assuming refund endpoint
-        }
+        $refund_data = $this->auth_handler->add_auth_to_body($refund_data);
 
         $headers = array('Content-Type' => 'application/json');
         $headers = array_merge($headers, $this->auth_handler->get_auth_headers());
 
         $this->log_to_file('Key2Pay Refund Request: Preparing to send refund for order #' . $order_id);
-        $this->log_to_file('Key2Pay Refund Request: API URL: ' . $this->build_api_url('/transaction/refund')); // Assuming refund endpoint
+        $this->log_to_file('Key2Pay Refund Request: API URL: ' . $endpoint);
 
         $response = wp_remote_post(
-            $this->build_api_url('/transaction/refund'), // Assuming this is the refund endpoint
+            $endpoint,
             array(
                 'method'    => 'POST',
                 'headers'   => $headers,
@@ -792,8 +811,6 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
      */
     public function is_available()
     {
-        $this->log_to_file('Key2Pay Debug: Payment gateway ' . $this->id . ' is_available() called');
-
         // Check if gateway is enabled
         if ('yes' !== $this->enabled) {
             $this->log_to_file('Key2Pay Debug: Payment gateway ' . $this->id . ' disabled');
@@ -814,6 +831,25 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
 
         $this->log_to_file('Key2Pay Debug: Payment gateway ' . $this->id . ' available - all checks passed');
         return parent::is_available();
+    }
+
+    /**
+     * Redact sensitive data from an array for logging.
+     *
+     * @param array $array The array to redact.
+     * @return array The redacted array.
+     */
+    protected function redact_sensitive_data($array)
+    {
+        $forbidden = ['Authorization', 'password', 'merchantid', 'api_key', 'secret_key'];
+
+        foreach ($forbidden as $key) {
+            if (isset($array[$key])) {
+                $array[$key] = '[REDACTED]';
+            }
+        }
+
+        return $array;
     }
 
     /**
