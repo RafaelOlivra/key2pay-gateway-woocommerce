@@ -31,10 +31,10 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
     {
         // 1. Set specific properties for THIS gateway. These MUST be set BEFORE parent::__construct().
         $this->id                   = 'key2pay_thai_debit';
-        $this->icon                 = apply_filters('woocommerce_key2pay_thai_debit_icon', plugin_dir_url(dirname(__FILE__)) . 'assets/images/thai-debit.webp');
+        $this->icon                 = KEY2PAY_PLUGIN_URL . 'assets/images/key2pay-admin.webp';
         $this->has_fields           = true; // This gateway requires input fields on checkout.
         $this->method_title         = __('Key2Pay Thai Debit (QR Payment)', 'key2pay');
-        $this->method_description   = __('Accept Thai QR debit payments via Key2Pay. Customers provide their bank details and are redirected to scan a QR code.', 'key2pay');
+        $this->method_description   = __('Pay using Thai QR debit payments via Key2Pay.', 'key2pay');
 
         // 2. Call the parent constructor (WC_Payment_Gateway).
         // This will call init_form_fields() and init_settings() from the parent chain.

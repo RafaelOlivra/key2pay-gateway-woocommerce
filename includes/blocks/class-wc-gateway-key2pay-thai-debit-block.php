@@ -22,7 +22,7 @@ class WC_Gateway_Key2Pay_Thai_Debit_Block extends AbstractPaymentMethodType
     {
         return [
             'title' => __('Key2Pay Thai Debit (QR Payment)', 'key2pay'),
-            'description' => __('Accept Thai QR debit payments via Key2Pay. Customers provide their bank details and are redirected to scan a QR code.', 'key2pay'),
+            'description' => __('Pay using Thai QR debit payments via Key2Pay.', 'key2pay'),
             'supports' => ['products', 'refunds'],
         ];
     }

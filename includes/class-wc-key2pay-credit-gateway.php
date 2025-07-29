@@ -32,10 +32,10 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
     {
         // 1. Set specific properties for THIS gateway. These MUST be set BEFORE parent::__construct().
         $this->id                   = 'key2pay_credit';
-        $this->icon                 = apply_filters('woocommerce_key2pay_credit_icon', plugin_dir_url(dirname(__FILE__)) . 'assets/images/key2pay-admin.webp');
+        $this->icon                 = KEY2PAY_PLUGIN_URL . 'assets/images/key2pay-admin.webp';
         $this->has_fields           = false; // No fields on checkout for this gateway
         $this->method_title         = __('Key2Pay Credit Card', 'key2pay');
-        $this->method_description   = __('Accept credit card payments via Key2Pay with maximum security. Customers are redirected to Key2Pay\'s hosted payment page.', 'key2pay');
+        $this->method_description   = __('Pay with credit card via Key2Pay with maximum security.', 'key2pay');
 
         // 2. Call the parent constructor (WC_Payment_Gateway).
         // This will call init_form_fields() and init_settings() from the parent chain.
