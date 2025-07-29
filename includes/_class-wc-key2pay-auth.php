@@ -1,12 +1,11 @@
 <?php
-
 if (! defined('ABSPATH')) {
     exit; // Exit if accessed directly.
 }
 
 /**
  * Key2Pay Authentication Handler
- *
+ * 
  * Handles different authentication methods for Key2Pay API:
  * - Basic Auth (Merchant ID + Password)
  * - API Key Authentication
@@ -18,10 +17,10 @@ class WC_Key2Pay_Auth
     /**
      * Authentication types
      */
-    public const AUTH_TYPE_BASIC = 'basic';
-    public const AUTH_TYPE_API_KEY = 'api_key';
-    public const AUTH_TYPE_BEARER = 'bearer';
-    public const AUTH_TYPE_SIGNED = 'signed';
+    const AUTH_TYPE_BASIC = 'basic';
+    const AUTH_TYPE_API_KEY = 'api_key';
+    const AUTH_TYPE_BEARER = 'bearer';
+    const AUTH_TYPE_SIGNED = 'signed';
 
     /**
      * Get all available authentication types
@@ -30,11 +29,9 @@ class WC_Key2Pay_Auth
     {
         return array(
             self::AUTH_TYPE_BASIC => __('Basic (Merchant ID + Password)', 'woocommerce-key2pay-gateway'),
-
-            // CURRENTLY DISABLED AUTH TYPES
-            // self::AUTH_TYPE_API_KEY => __('API Key', 'woocommerce-key2pay-gateway'),
-            // self::AUTH_TYPE_BEARER => __('Bearer Token', 'woocommerce-key2pay-gateway'),
-            // self::AUTH_TYPE_SIGNED => __('HMAC Signed', 'woocommerce-key2pay-gateway'),
+            self::AUTH_TYPE_API_KEY => __('API Key', 'woocommerce-key2pay-gateway'),
+            self::AUTH_TYPE_BEARER => __('Bearer Token', 'woocommerce-key2pay-gateway'),
+            self::AUTH_TYPE_SIGNED => __('HMAC Signed', 'woocommerce-key2pay-gateway'),
         );
     }
 
@@ -156,13 +153,13 @@ class WC_Key2Pay_Auth
 
         // Create signature string
         $signature_string = $this->create_signature_string($request_data, $endpoint);
-
+        
         // Generate HMAC signature
         $signature = hash_hmac('sha256', $signature_string, $this->secret_key);
-
+        
         // Add signature to request data
         $request_data['signature'] = $signature;
-
+        
         if ($this->debug) {
             error_log('Key2Pay Auth: Signature generated: ' . $signature);
         }
@@ -177,10 +174,10 @@ class WC_Key2Pay_Auth
     {
         // Sort parameters alphabetically
         ksort($request_data);
-
+        
         // Create query string
         $query_string = http_build_query($request_data);
-
+        
         // Add endpoint if provided
         if (!empty($endpoint)) {
             $signature_string = $endpoint . '?' . $query_string;
@@ -206,7 +203,7 @@ class WC_Key2Pay_Auth
 
         // Generate expected signature
         $expected_signature = hash_hmac('sha256', $payload, $webhook_secret);
-
+        
         // Compare signatures using hash_equals for timing attack prevention
         $is_valid = hash_equals($expected_signature, $signature_header);
 
@@ -234,16 +231,16 @@ class WC_Key2Pay_Auth
         switch ($this->auth_type) {
             case self::AUTH_TYPE_BASIC:
                 return !empty($this->merchant_id) && !empty($this->password);
-
+            
             case self::AUTH_TYPE_API_KEY:
                 return !empty($this->api_key);
-
+            
             case self::AUTH_TYPE_BEARER:
                 return !empty($this->access_token);
-
+            
             case self::AUTH_TYPE_SIGNED:
                 return !empty($this->api_key) && !empty($this->secret_key);
-
+            
             default:
                 return false;
         }
@@ -257,18 +254,18 @@ class WC_Key2Pay_Auth
         switch ($this->auth_type) {
             case self::AUTH_TYPE_BASIC:
                 return __('Basic authentication using Merchant ID and Password in request body', 'woocommerce-key2pay-gateway');
-
+            
             case self::AUTH_TYPE_API_KEY:
                 return __('API Key authentication using X-API-Key header', 'woocommerce-key2pay-gateway');
-
+            
             case self::AUTH_TYPE_BEARER:
                 return __('Bearer token authentication using Authorization header', 'woocommerce-key2pay-gateway');
-
+            
             case self::AUTH_TYPE_SIGNED:
                 return __('HMAC signed requests with API Key and Secret Key', 'woocommerce-key2pay-gateway');
-
+            
             default:
                 return __('Unknown authentication method', 'woocommerce-key2pay-gateway');
         }
     }
-}
+} 
