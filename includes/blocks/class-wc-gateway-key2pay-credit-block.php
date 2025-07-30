@@ -21,7 +21,7 @@ class WC_Gateway_Key2Pay_Credit_Block extends AbstractPaymentMethodType
     {
         return [
             'title' => __('Key2Pay Credit Card', 'key2pay'),
-            'description' => __('Pay with credit card via Key2Pay with maximum security.', 'key2pay'),
+            'description' => __('Pay using Credit Card via Key2Pay.', 'key2pay'),
             'supports' => ['products', 'refunds'],
         ];
     }

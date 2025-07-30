@@ -8,7 +8,7 @@ if (! defined('ABSPATH')) {
  * Abstract Base Class for Key2Pay WooCommerce Payment Gateways.
  *
  * Provides common functionality, properties, and a shared structure
- * for all Key2Pay payment methods (e.g., Redirect, Thai Debit).
+ * for all Key2Pay payment methods (e.g., Redirect, Thai QR Debit).
  *
  * @extends WC_Payment_Gateway
  */
@@ -245,7 +245,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
         // This method should be implemented by child classes.
         // It will handle the actual payment processing logic.
         // For now, we throw an exception to enforce implementation.
-        throw new Exception(__('process_payment() must be implemented by child classes.', 'key2pay'));
+        throw new Exception('process_payment() must be implemented by child classes.');
     }
 
     /**
@@ -511,14 +511,14 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
                 }
                 break;
             case self::CODE_DEBIT_PENDING:
-                // Thai Debit initial processing, treat as pending
+                // Thai QR Debit initial processing, treat as pending
                 $order->update_status('pending', sprintf(__('Key2Pay payment is processing. Transaction ID: %s, [Code: %s] - %s', 'key2pay'), $transaction_id, $numeric_code, $status_message));
                 if ($this->debug) {
                     $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' marked as pending (Processing)', ['source' => $this->id]);
                 }
                 break;
             case self::CODE_DEBIT_FAILED:
-                // Thai Debit failed, treat as failed
+                // Thai QR Debit failed, treat as failed
                 $order->update_status('failed', sprintf(__('Key2Pay payment failed: %s. [Code: %s], Error: %s', 'key2pay'), $this->get_status_code_message($numeric_code), $numeric_code, $error_text));
                 if ($this->debug) {
                     $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' failed', ['source' => $this->id]);
@@ -736,7 +736,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
         $endpoint       = $this->build_api_url('/transaction/refund');
 
         if (empty($transaction_id)) {
-            $this->log->error('Key2Pay Refund: No transaction ID found for order #' . $order_id, ['source' => $this->id]);
+            $this->log->error('Key2Pay refund: No transaction ID found for order #' . $order_id, ['source' => $this->id]);
             return false;
         }
 
@@ -754,8 +754,8 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
         $headers = ['Content-Type' => 'application/json'];
         $headers = array_merge($headers, $this->auth_handler->get_auth_headers());
 
-        $this->log_to_file('Key2Pay Refund Request: Preparing to send refund for order #' . $order_id);
-        $this->log_to_file('Key2Pay Refund Request: API URL: ' . $endpoint);
+        $this->log_to_file('Key2Pay refund Request: Preparing to send refund for order #' . $order_id);
+        $this->log_to_file('Key2Pay refund Request: API URL: ' . $endpoint);
 
         $response = wp_remote_post(
             $endpoint,
@@ -770,7 +770,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
 
         if (is_wp_error($response)) {
             $error_message = $response->get_error_message();
-            $this->log->error(sprintf('Key2Pay Refund API Request Failed for order #%s: %s', $order_id, $error_message), ['source' => $this->id]);
+            $this->log->error(sprintf('Key2Pay refund API Request Failed for order #%s: %s', $order_id, $error_message), ['source' => $this->id]);
             return false;
         }
 
@@ -778,22 +778,22 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
         $data = json_decode($body);
 
         if ($this->debug) {
-            $this->log->debug(sprintf('Key2Pay Refund API Response for order #%s: %s', $order_id, print_r($data, true)), ['source' => $this->id]);
+            $this->log->debug(sprintf('Key2Pay refund API Response for order #%s: %s', $order_id, print_r($data, true)), ['source' => $this->id]);
         }
 
         // Key2Pay refund specific success/failure logic
         // Note: Documentation is not provided yet, so this is based on common patterns.
         // @see https://key2pay.readme.io/reference/refund
         if (isset($data->type) && 'valid' === $data->type && isset($data->result) && ($data->result === 'CAPTURED' || $data->result === 'Success' || $data->responsecode == self::CODE_APPROVED)) {
-            $order->add_order_note(sprintf(__('Key2Pay Refund successful. Amount: %s. Reason: %s. Transaction ID: %s', 'key2pay'), wc_price($amount), $reason, $transaction_id));
+            $order->add_order_note(sprintf(__('Key2Pay refund successful. Amount: %s. Reason: %s. Transaction ID: %s', 'key2pay'), wc_price($amount), $reason, $transaction_id));
             if ($this->debug) {
-                $this->log->debug('Key2Pay Refund: Order #' . $order_id . ' refund successful.', ['source' => $this->id]);
+                $this->log->debug('Key2Pay refund: Order #' . $order_id . ' refund successful.', ['source' => $this->id]);
             }
             return true;
         } else {
             $error_message = isset($data->error_text) ? $data->error_text : __('An unknown error occurred during Key2Pay refund.', 'key2pay');
-            $order->add_order_note(sprintf(__('Key2Pay Refund failed. Amount: %s. Reason: %s. Error: %s', 'key2pay'), wc_price($amount), $reason, $error_message));
-            $this->log->error(sprintf('Key2Pay Refund Failed for order #%s: %s', $order_id, $error_message), ['source' => $this->id]);
+            $order->add_order_note(sprintf(__('Key2Pay refund failed. Amount: %s. Reason: %s. Error: %s', 'key2pay'), wc_price($amount), $reason, $error_message));
+            $this->log->error(sprintf('Key2Pay refund Failed for order #%s: %s', $order_id, $error_message), ['source' => $this->id]);
             return false;
         }
     }

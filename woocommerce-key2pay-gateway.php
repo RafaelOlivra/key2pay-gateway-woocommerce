@@ -103,7 +103,7 @@ class WC_Key2Pay_Gateway_Plugin
      */
     public function add_key2pay_gateways($gateways)
     {
-        // Add both redirect and Thai Debit gateways
+        // Add both redirect and Thai QR Debit gateways
         $gateways[] = 'WC_Key2Pay_Credit_Gateway';
         $gateways[] = 'WC_Key2Pay_Thai_Debit_Gateway';
         return $gateways;

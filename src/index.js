@@ -8,7 +8,7 @@ import { useEffect } from "@wordpress/element";
  */
 
 /**
- * ### Thai Debit Setup ###
+ * ### Thai QR Debit Setup ###
  */
 
 const ThaiDebitFieldsContent = (props) => {
@@ -71,7 +71,7 @@ const ThaiDebitFieldsContent = (props) => {
             return {
                 type: emitResponse.responseTypes.ERROR,
                 message: __(
-                    "Please fill in all required fields for Thai Debit.",
+                    "Please fill in all required fields for Thai QR Debit.",
                     "key2pay"
                 ),
             };
@@ -94,7 +94,7 @@ const ThaiDebitFieldsContent = (props) => {
         <div className='k2p-thai-debit'>
             <PaymentMethodLabel
                 text={__(
-                    "Pay securely with Thai Debit via Key2Pay. Please enter your bank details below.",
+                    "Pay using Thai QR Debit payments via Key2Pay. Please enter your bank details below.",
                     "key2pay"
                 )}
             />
@@ -150,11 +150,11 @@ const ThaiDebitFieldsContent = (props) => {
 registerPaymentMethod({
     name: "key2pay_thai_debit",
     paymentMethodId: "key2pay_thai_debit",
-    label: __("Key2Pay Thai Debit (QR Payment)", "key2pay"),
+    label: __("Key2Pay Thai QR Debit (QR Payment)", "key2pay"),
     content: <ThaiDebitFieldsContent />,
     edit: <ThaiDebitFieldsContent />,
     canMakePayment: () => true,
-    ariaLabel: __("Key2Pay Thai Debit (QR Payment)", "key2pay"),
+    ariaLabel: __("Key2Pay Thai QR Debit (QR Payment)", "key2pay"),
     supports: {
         features: ["products", "refunds"],
     },
@@ -173,7 +173,7 @@ const ThaiCreditFieldsContent = (props) => {
         <div className='k2p-credit-card'>
             <PaymentMethodLabel
                 text={__(
-                    "Pay securely with your credit card via Key2Pay. You will be redirected to complete your payment securely.",
+                    "Pay using Credit Card via Key2Pay. You will be redirected to complete your payment securely.",
                     "key2pay"
                 )}
             />

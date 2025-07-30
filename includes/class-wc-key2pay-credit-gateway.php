@@ -35,7 +35,7 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
         $this->icon               = KEY2PAY_PLUGIN_URL . 'assets/images/key2pay.png';
         $this->has_fields         = false; // No fields on checkout for this gateway
         $this->method_title       = __('Key2Pay Credit Card', 'key2pay');
-        $this->method_description = __('Pay with credit card via Key2Pay with maximum security.', 'key2pay');
+        $this->method_description = __('Pay using Credit Card via Key2Pay.', 'key2pay');
 
         // 2. Call the parent constructor (WC_Payment_Gateway) and initialize settings.
         parent::__construct();
@@ -68,7 +68,7 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
         if ($this->description) {
             echo wpautop(wp_kses_post($this->description));
         } else {
-            echo wpautop(wp_kses_post(__('Pay securely with your credit card via Key2Pay. You will be redirected to complete your payment securely.', 'key2pay')));
+            echo wpautop(wp_kses_post(__('Pay using Credit Card via Key2Pay. You will be redirected to complete your payment securely.', 'key2pay')));
         }
     }
 

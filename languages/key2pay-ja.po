@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Key2Pay Gateway 1.0.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-27 10:00+0000\n"
-"PO-Revision-Date: 2025-01-27 10:00+0000\n"
+"POT-Creation-Date: 2025-07-30 16:07-0300\n"
+"PO-Revision-Date: 2025-07-30 16:08-0300\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: ja\n"
@@ -11,135 +11,521 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Poedit 2.0.7\n"
+"X-Poedit-Basepath: ..\n"
+"X-Poedit-KeywordsList: __;_e;_x\n"
+"X-Poedit-SearchPath-0: .\n"
+"X-Poedit-SearchPathExcluded-0: node_modules\n"
+"X-Poedit-SearchPathExcluded-1: build\n"
+"X-Poedit-SearchPathExcluded-2: .git\n"
 
-msgid "Key2Pay Secure Redirect"
-msgstr "Key2Pay セキュアリダイレクト"
-
-msgid "Accept payments via Key2Pay with maximum security. Customers are redirected to Key2Pay's hosted payment page."
-msgstr "Key2Payを使用して最大限のセキュリティで支払いを受け付けます。お客様はKey2Payのホストされた支払いページにリダイレクトされます。"
-
-msgid "Pay securely using Key2Pay. You will be redirected to complete your payment securely."
-msgstr "Key2Payを使用して安全に支払いを行ってください。支払いを完了するために安全なページにリダイレクトされます。"
-
+#: includes/abstract-wc-key2pay-gateway-base.php:135
 msgid "Enable/Disable"
-msgstr "有効/無効"
+msgstr ""
 
-msgid "Enable Key2Pay Secure Redirect"
-msgstr "Key2Payセキュアリダイレクトを有効にする"
+#: includes/abstract-wc-key2pay-gateway-base.php:137
+msgid "Enable Key2Pay Payment Method"
+msgstr ""
 
+#: includes/abstract-wc-key2pay-gateway-base.php:141
 msgid "Title"
-msgstr "タイトル"
+msgstr ""
 
+#: includes/abstract-wc-key2pay-gateway-base.php:143
 msgid "This controls the title which the user sees during checkout."
-msgstr "チェックアウト時にユーザーが表示するタイトルを制御します。"
+msgstr ""
 
+#: includes/abstract-wc-key2pay-gateway-base.php:148
 msgid "Description"
-msgstr "説明"
+msgstr ""
 
+#: includes/abstract-wc-key2pay-gateway-base.php:150
 msgid "This controls the description which the user sees during checkout."
-msgstr "チェックアウト時にユーザーが表示する説明を制御します。"
+msgstr ""
 
-msgid "Authentication Settings"
-msgstr "認証設定"
+#: includes/abstract-wc-key2pay-gateway-base.php:155
+msgid "Key2Pay API Authentication"
+msgstr ""
 
-msgid "Configure how to authenticate with Key2Pay API."
-msgstr "Key2Pay APIとの認証方法を設定します。"
+#: includes/abstract-wc-key2pay-gateway-base.php:157
+msgid ""
+"Configure how to authenticate with the Key2Pay API. Consult your Key2Pay "
+"account manager for the correct method."
+msgstr ""
 
+#: includes/abstract-wc-key2pay-gateway-base.php:160
 msgid "Authentication Method"
-msgstr "認証方法"
+msgstr ""
 
-msgid "Choose the authentication method for Key2Pay API."
-msgstr "Key2Pay APIの認証方法を選択してください。"
+#: includes/abstract-wc-key2pay-gateway-base.php:162
+msgid "Select the authentication method for Key2Pay API requests."
+msgstr ""
 
-msgid "Basic (Merchant ID + Password)"
-msgstr "基本（マーチャントID + パスワード）"
-
-msgid "API Key"
-msgstr "APIキー"
-
-msgid "Bearer Token"
-msgstr "ベアラートークン"
-
-msgid "HMAC Signed"
-msgstr "HMAC署名"
-
+#: includes/abstract-wc-key2pay-gateway-base.php:168
 msgid "Merchant ID"
-msgstr "マーチャントID"
+msgstr ""
 
-msgid "Your Key2Pay Merchant ID (required for Basic authentication)."
-msgstr "Key2PayマーチャントID（基本認証に必要）。"
+#: includes/abstract-wc-key2pay-gateway-base.php:170
+msgid ""
+"Your Key2Pay Merchant ID. Used for Basic Auth, and might be required for "
+"HMAC Signed."
+msgstr ""
 
+#: includes/abstract-wc-key2pay-gateway-base.php:175
 msgid "Password"
-msgstr "パスワード"
+msgstr ""
 
-msgid "Your Key2Pay API Password (required for Basic authentication)."
-msgstr "Key2Pay APIパスワード（基本認証に必要）。"
+#: includes/abstract-wc-key2pay-gateway-base.php:177
+msgid "Your Key2Pay API Password. Used for Basic Auth."
+msgstr ""
 
-msgid "Your Key2Pay API Key (required for API Key and HMAC authentication)."
-msgstr "Key2Pay APIキー（APIキー認証とHMAC認証に必要）。"
+#: includes/abstract-wc-key2pay-gateway-base.php:182
+msgid "API Base URL"
+msgstr ""
 
-msgid "Secret Key"
-msgstr "シークレットキー"
+#: includes/abstract-wc-key2pay-gateway-base.php:184
+msgid ""
+"Key2Pay API base URL. Use sandbox for testing, production for live payments. "
+"Ensure it ends with a slash if required by Key2Pay (e.g., https://api."
+"key2payment.com/)."
+msgstr ""
 
-msgid "Your Key2Pay Secret Key (required for HMAC authentication and webhook verification)."
-msgstr "Key2Payシークレットキー（HMAC認証とwebhook検証に必要）。"
-
-msgid "Access Token"
-msgstr "アクセストークン"
-
-msgid "Your Key2Pay Access Token (required for Bearer authentication)."
-msgstr "Key2Payアクセストークン（ベアラー認証に必要）。"
-
+#: includes/abstract-wc-key2pay-gateway-base.php:192
 msgid "Debug Log"
-msgstr "デバッグログ"
+msgstr ""
 
+#: includes/abstract-wc-key2pay-gateway-base.php:194
 msgid "Enable logging"
-msgstr "ログを有効にする"
+msgstr ""
 
-msgid "Log Key2Pay Credit Card events."
-msgstr "Key2Payリダイレクトイベントをログに記録します。"
+#: includes/abstract-wc-key2pay-gateway-base.php:196
+#, php-format
+msgid "Log Key2Pay payment events to <code>%s</code>."
+msgstr ""
 
+#: includes/abstract-wc-key2pay-gateway-base.php:199
+msgid "Security Settings"
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:201
+msgid "Configure security settings for payment processing."
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:204
+msgid "Disable URL Parameter Fallback"
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:206
+msgid "Disable URL parameter processing for maximum security"
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:208
+msgid ""
+"When enabled, only webhooks will be used for payment status updates. URL "
+"parameters will be completely ignored. Recommended for production "
+"environments."
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:222
+msgid "This payment method requires no extra fields on checkout."
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:248
+msgid "process_payment() must be implemented by child classes."
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:277
+#: includes/abstract-wc-key2pay-gateway-base.php:301
+msgid ""
+"Your order is awaiting payment confirmation from Key2Pay. We will update "
+"your order status once the payment is confirmed via our secure webhook "
+"system."
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:279
+#: includes/abstract-wc-key2pay-gateway-base.php:303
+msgid ""
+"Thank you! Your payment has been confirmed and your order is being processed."
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:283
+#: includes/abstract-wc-key2pay-gateway-base.php:307
+msgid "Thank you for your order. We will process your payment shortly."
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:338
+#, php-format
+msgid ""
+"Payment status processed via URL parameter fallback. [Code: %s], "
+"Description: %s"
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:389
+msgid "Invalid webhook data received."
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:435
+msgid "Order not found for track_id: "
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:452
+msgid "Webhook processed successfully."
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:478
+#, php-format
+msgid "Key2Pay payment approved. Transaction ID: %s, [Code: %s] - %s"
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:484
+#: includes/abstract-wc-key2pay-gateway-base.php:490
+#: includes/abstract-wc-key2pay-gateway-base.php:496
+#: includes/abstract-wc-key2pay-gateway-base.php:502
+#: includes/abstract-wc-key2pay-gateway-base.php:508
+#: includes/abstract-wc-key2pay-gateway-base.php:522
+#, php-format
+msgid "Key2Pay payment failed: %s. [Code: %s], Error: %s"
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:515
+#, php-format
+msgid "Key2Pay payment is processing. Transaction ID: %s, [Code: %s] - %s"
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:529
+#, php-format
+msgid ""
+"Key2Pay payment completed successfully. Transaction ID: %s, [Code: %s] - %s"
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:539
+#, php-format
+msgid ""
+"Key2Pay payment processed with unknown response code. Transaction ID: %s, "
+"[Code: %s] - %s"
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:559
+msgid ""
+"Payment failed: Invalid credentials. Please check your merchant ID and "
+"password."
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:561
 msgid "Payment approved successfully."
-msgstr "支払いが正常に承認されました。"
+msgstr ""
 
+#: includes/abstract-wc-key2pay-gateway-base.php:563
 msgid "Payment failed: Insufficient funds in the account."
-msgstr "支払い失敗：口座残高不足。"
+msgstr ""
 
-msgid "Payment failed: Do not honour - the transaction was declined by the bank."
-msgstr "支払い失敗：不承認 - 銀行によって取引が拒否されました。"
+#: includes/abstract-wc-key2pay-gateway-base.php:565
+msgid ""
+"Payment failed: Do not honour. The transaction was declined by the bank."
+msgstr ""
 
-msgid "Payment failed: Restricted card - this card cannot be used for this transaction."
-msgstr "支払い失敗：制限されたカード - このカードはこの取引に使用できません。"
+#: includes/abstract-wc-key2pay-gateway-base.php:567
+msgid ""
+"Payment failed: Restricted card. This card cannot be used for this "
+"transaction."
+msgstr ""
 
-msgid "Payment failed: Invalid transaction - the transaction details are not valid."
-msgstr "支払い失敗：無効な取引 - 取引詳細が無効です。"
+#: includes/abstract-wc-key2pay-gateway-base.php:569
+msgid ""
+"Payment failed: Invalid transaction. The transaction details are not valid."
+msgstr ""
 
-msgid "Payment failed: Transaction timeout - the request took too long to process."
-msgstr "支払い失敗：取引タイムアウト - リクエストの処理に時間がかかりすぎました。"
+#: includes/abstract-wc-key2pay-gateway-base.php:571
+msgid ""
+"Payment failed: Transaction timeout. The request took too long to process."
+msgstr ""
 
+#: includes/abstract-wc-key2pay-gateway-base.php:573
+msgid "Payment processing: Awaiting confirmation."
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:575
+msgid "Payment failed: The transaction was not completed."
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:577
 msgid "Payment processed with unknown response code."
-msgstr "不明な応答コードで支払いが処理されました。"
+msgstr ""
 
+#: includes/abstract-wc-key2pay-gateway-base.php:593
 msgid "Your payment has been approved successfully!"
-msgstr "お支払いが正常に承認されました！"
+msgstr ""
 
-msgid "Sorry, your payment could not be processed due to insufficient funds. Please check your account balance and try again."
-msgstr "申し訳ございませんが、残高不足のためお支払いを処理できませんでした。口座残高をご確認の上、再度お試しください。"
+#: includes/abstract-wc-key2pay-gateway-base.php:595
+msgid ""
+"Sorry, your payment could not be processed due to insufficient funds. Please "
+"check your account balance and try again."
+msgstr ""
 
-msgid "Sorry, your payment was declined by your bank. Please contact your bank or try a different payment method."
-msgstr "申し訳ございませんが、お支払いが銀行によって拒否されました。銀行にお問い合わせいただくか、別の支払い方法をお試しください。"
+#: includes/abstract-wc-key2pay-gateway-base.php:597
+msgid ""
+"Sorry, your payment was declined by your bank. Please contact your bank or "
+"try a different payment method."
+msgstr ""
 
-msgid "Sorry, this card cannot be used for this transaction. Please try a different card or contact your bank."
-msgstr "申し訳ございませんが、このカードはこの取引に使用できません。別のカードをお試しいただくか、銀行にお問い合わせください。"
+#: includes/abstract-wc-key2pay-gateway-base.php:599
+msgid ""
+"Sorry, this card cannot be used for this transaction. Please try a different "
+"card or contact your bank."
+msgstr ""
 
-msgid "Sorry, there was an issue with the transaction details. Please check your information and try again."
-msgstr "申し訳ございませんが、取引詳細に問題がありました。情報をご確認の上、再度お試しください。"
+#: includes/abstract-wc-key2pay-gateway-base.php:601
+msgid ""
+"Sorry, there was an issue with the transaction details. Please check your "
+"information and try again."
+msgstr ""
 
-msgid "Sorry, the payment request timed out. Please try again or contact support if the problem persists."
-msgstr "申し訳ございませんが、支払いリクエストがタイムアウトしました。再度お試しいただくか、問題が続く場合はサポートにお問い合わせください。"
+#: includes/abstract-wc-key2pay-gateway-base.php:603
+msgid ""
+"Sorry, the payment request timed out. Please try again or contact support if "
+"the problem persists."
+msgstr ""
 
-msgid "Sorry, there was an unexpected issue with your payment. Please try again or contact support."
-msgstr "申し訳ございませんが、お支払いで予期しない問題が発生しました。再度お試しいただくか、サポートにお問い合わせください。"
+#: includes/abstract-wc-key2pay-gateway-base.php:605
+msgid "Sorry, your payment is still processing. Please wait for confirmation."
+msgstr ""
 
-msgid "Your credit card payment was not successful. Please try again or contact support if you believe this is an error."
-msgstr "クレジットカードでのお支払いが成功しませんでした。再度お試しいただくか、エラーだと思われる場合はサポートにお問い合わせください。" 
+#: includes/abstract-wc-key2pay-gateway-base.php:607
+msgid ""
+"Sorry, your payment could not be processed. Please try again or contact "
+"support."
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:609
+msgid ""
+"Sorry, there was an unexpected issue with your payment. Please try again or "
+"contact support."
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:649
+msgid ""
+"Your payment was not successful. Please try again or contact support if you "
+"believe this is an error."
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:788
+#, php-format
+msgid "Key2Pay refund successful. Amount: %s. Reason: %s. Transaction ID: %s"
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:794
+msgid "An unknown error occurred during Key2Pay refund."
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:795
+#, php-format
+msgid "Key2Pay refund failed. Amount: %s. Reason: %s. Error: %s"
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:826
+msgid "API Base URL must be a valid URL."
+msgstr ""
+
+#: includes/abstract-wc-key2pay-gateway-base.php:853
+#, php-format
+msgid ""
+"Key2Pay payment gateway \"%1$s\" is enabled but credentials for \"%2$s\" are "
+"not configured. %3$sClick here to configure.%4$s"
+msgstr ""
+
+#: includes/blocks/class-wc-gateway-key2pay-credit-block.php:23
+#: includes/class-wc-key2pay-credit-gateway.php:37 src/index.js:187
+#: src/index.js:191
+msgid "Key2Pay Credit Card"
+msgstr ""
+
+#: includes/blocks/class-wc-gateway-key2pay-credit-block.php:24
+#: includes/class-wc-key2pay-credit-gateway.php:38
+msgid "Pay with credit card via Key2Pay with maximum security."
+msgstr ""
+
+#: includes/blocks/class-wc-gateway-key2pay-thai-debit-block.php:24
+#: includes/class-wc-key2pay-thai-debit-gateway.php:36 src/index.js:153
+#: src/index.js:157
+msgid "Key2Pay Thai QR Debit (QR Payment)"
+msgstr ""
+
+#: includes/blocks/class-wc-gateway-key2pay-thai-debit-block.php:25
+#: includes/class-wc-key2pay-thai-debit-gateway.php:37
+msgid "Pay using Thai QR debit payments via Key2Pay."
+msgstr ""
+
+#: includes/class-wc-key2pay-auth.php:32
+msgid "Basic (Merchant ID + Password)"
+msgstr ""
+
+#: includes/class-wc-key2pay-auth.php:259
+msgid "Basic authentication using Merchant ID and Password in request body"
+msgstr ""
+
+#: includes/class-wc-key2pay-auth.php:262
+msgid "API Key authentication using X-API-Key header"
+msgstr ""
+
+#: includes/class-wc-key2pay-auth.php:265
+msgid "Bearer token authentication using Authorization header"
+msgstr ""
+
+#: includes/class-wc-key2pay-auth.php:268
+msgid "HMAC signed requests with API Key and Secret Key"
+msgstr ""
+
+#: includes/class-wc-key2pay-auth.php:271
+msgid "Unknown authentication method"
+msgstr ""
+
+#: includes/class-wc-key2pay-credit-gateway.php:71 src/index.js:176
+msgid ""
+"Pay securely with your credit card via Key2Pay. You will be redirected to "
+"complete your payment securely."
+msgstr ""
+
+#: includes/class-wc-key2pay-credit-gateway.php:107
+#: includes/class-wc-key2pay-thai-debit-gateway.php:179
+#, php-format
+msgid "Order %s from %s"
+msgstr ""
+
+#: includes/class-wc-key2pay-credit-gateway.php:154
+#, php-format
+msgid "Key2Pay redirect payment error: %s"
+msgstr ""
+
+#: includes/class-wc-key2pay-credit-gateway.php:175
+msgid "Awaiting Key2Pay payment confirmation."
+msgstr ""
+
+#: includes/class-wc-key2pay-credit-gateway.php:196
+msgid "Payment session created, but no redirection URL received."
+msgstr ""
+
+#: includes/class-wc-key2pay-credit-gateway.php:197
+#, php-format
+msgid "Key2Pay redirect failed: %s"
+msgstr ""
+
+#: includes/class-wc-key2pay-credit-gateway.php:208
+msgid "An unknown error occurred with Key2Pay redirect."
+msgstr ""
+
+#: includes/class-wc-key2pay-credit-gateway.php:209
+#, php-format
+msgid "Key2Pay redirect payment failed: %s"
+msgstr ""
+
+#: includes/class-wc-key2pay-thai-debit-gateway.php:71 src/index.js:97
+msgid ""
+"Pay securely with Thai QR Debit via Key2Pay. Please enter your bank details "
+"below."
+msgstr ""
+
+#: includes/class-wc-key2pay-thai-debit-gateway.php:79 src/index.js:104
+msgid "Bank Code"
+msgstr ""
+
+#: includes/class-wc-key2pay-thai-debit-gateway.php:80 src/index.js:107
+msgid "e.g., 014"
+msgstr ""
+
+#: includes/class-wc-key2pay-thai-debit-gateway.php:87 src/index.js:119
+msgid "Bank Account Number"
+msgstr ""
+
+#: includes/class-wc-key2pay-thai-debit-gateway.php:88
+msgid "Enter your debit account number"
+msgstr ""
+
+#: includes/class-wc-key2pay-thai-debit-gateway.php:95 src/index.js:134
+msgid "Bank Account Name"
+msgstr ""
+
+#: includes/class-wc-key2pay-thai-debit-gateway.php:96
+msgid "Name on your debit account"
+msgstr ""
+
+#: includes/class-wc-key2pay-thai-debit-gateway.php:123
+msgid "Please provide your Bank Account Number."
+msgstr ""
+
+#: includes/class-wc-key2pay-thai-debit-gateway.php:127
+msgid "Please provide your Bank Account Name."
+msgstr ""
+
+#: includes/class-wc-key2pay-thai-debit-gateway.php:131
+msgid "Please provide your Bank Code."
+msgstr ""
+
+#: includes/class-wc-key2pay-thai-debit-gateway.php:224
+#, php-format
+msgid "Key2Pay Thai QR Debit payment error: %s"
+msgstr ""
+
+#: includes/class-wc-key2pay-thai-debit-gateway.php:259
+msgid "Awaiting Key2Pay Thai QR Debit payment confirmation."
+msgstr ""
+
+#: includes/class-wc-key2pay-thai-debit-gateway.php:277
+msgid ""
+"Payment session created, but no redirection URL received for Thai QR Debit."
+msgstr ""
+
+#: includes/class-wc-key2pay-thai-debit-gateway.php:289
+msgid "An unknown error occurred with Key2Pay Thai QR Debit."
+msgstr ""
+
+#: src/index.js:74
+msgid "Please fill in all required fields for Thai QR Debit."
+msgstr ""
+
+#: src/index.js:122
+msgid "Enter account number"
+msgstr ""
+
+#: src/index.js:137
+msgid "Name on account"
+msgstr ""
+
+#: woocommerce-key2pay-gateway.php:148
+msgid "Settings"
+msgstr ""
+
+#~ msgid ""
+#~ "Accept payments via Key2Pay with maximum security. Customers are "
+#~ "redirected to Key2Pay's hosted payment page."
+#~ msgstr ""
+#~ "Key2Payを使用して最大限のセキュリティで支払いを受け付けます。お客様は"
+#~ "Key2Payのホストされた支払いページにリダイレクトされます。"
+
+#~ msgid "Configure how to authenticate with Key2Pay API."
+#~ msgstr "Key2Pay APIとの認証方法を設定します。"
+
+#~ msgid "API Key"
+#~ msgstr "APIキー"
+
+#~ msgid "Bearer Token"
+#~ msgstr "ベアラートークン"
+
+#~ msgid "HMAC Signed"
+#~ msgstr "HMAC署名"
+
+#~ msgid "Your Key2Pay API Key (required for API Key and HMAC authentication)."
+#~ msgstr "Key2Pay APIキー（APIキー認証とHMAC認証に必要）。"
+
+#~ msgid "Secret Key"
+#~ msgstr "シークレットキー"
+
+#~ msgid ""
+#~ "Your Key2Pay Secret Key (required for HMAC authentication and webhook "
+#~ "verification)."
+#~ msgstr "Key2Payシークレットキー（HMAC認証とwebhook検証に必要）。"
+
+#~ msgid "Access Token"
+#~ msgstr "アクセストークン"
+
+#~ msgid "Your Key2Pay Access Token (required for Bearer authentication)."
+#~ msgstr "Key2Payアクセストークン（ベアラー認証に必要）。"
