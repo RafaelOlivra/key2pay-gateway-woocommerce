@@ -18,24 +18,24 @@ class WC_Key2Pay_Auth
     /**
      * Authentication types
      */
-    public const AUTH_TYPE_BASIC = 'basic';
+    public const AUTH_TYPE_BASIC   = 'basic';
     public const AUTH_TYPE_API_KEY = 'api_key';
-    public const AUTH_TYPE_BEARER = 'bearer';
-    public const AUTH_TYPE_SIGNED = 'signed';
+    public const AUTH_TYPE_BEARER  = 'bearer';
+    public const AUTH_TYPE_SIGNED  = 'signed';
 
     /**
      * Get all available authentication types
      */
     public static function get_auth_types()
     {
-        return array(
+        return [
             self::AUTH_TYPE_BASIC => __('Basic (Merchant ID + Password)', 'key2pay'),
 
             // CURRENTLY DISABLED AUTH TYPES
             // self::AUTH_TYPE_API_KEY => __('API Key', 'key2pay'),
             // self::AUTH_TYPE_BEARER => __('Bearer Token', 'key2pay'),
             // self::AUTH_TYPE_SIGNED => __('HMAC Signed', 'key2pay'),
-        );
+        ];
     }
 
     private $auth_type;
@@ -52,18 +52,18 @@ class WC_Key2Pay_Auth
     public function __construct($auth_type = self::AUTH_TYPE_BASIC)
     {
         $this->auth_type = $auth_type;
-        $this->debug = false;
+        $this->debug     = false;
     }
 
     /**
      * Set authentication credentials
      */
-    public function set_credentials($credentials = array())
+    public function set_credentials($credentials = [])
     {
-        $this->merchant_id = isset($credentials['merchant_id']) ? $credentials['merchant_id'] : '';
-        $this->password = isset($credentials['password']) ? $credentials['password'] : '';
-        $this->api_key = isset($credentials['api_key']) ? $credentials['api_key'] : '';
-        $this->secret_key = isset($credentials['secret_key']) ? $credentials['secret_key'] : '';
+        $this->merchant_id  = isset($credentials['merchant_id']) ? $credentials['merchant_id'] : '';
+        $this->password     = isset($credentials['password']) ? $credentials['password'] : '';
+        $this->api_key      = isset($credentials['api_key']) ? $credentials['api_key'] : '';
+        $this->secret_key   = isset($credentials['secret_key']) ? $credentials['secret_key'] : '';
         $this->access_token = isset($credentials['access_token']) ? $credentials['access_token'] : '';
     }
 
@@ -80,7 +80,7 @@ class WC_Key2Pay_Auth
      */
     public function get_auth_headers()
     {
-        $headers = array();
+        $headers = [];
 
         switch ($this->auth_type) {
             case self::AUTH_TYPE_BASIC:
@@ -90,21 +90,21 @@ class WC_Key2Pay_Auth
 
             case self::AUTH_TYPE_API_KEY:
                 // API Key in header
-                if (!empty($this->api_key)) {
+                if (! empty($this->api_key)) {
                     $headers['X-API-Key'] = $this->api_key;
                 }
                 break;
 
             case self::AUTH_TYPE_BEARER:
                 // Bearer token authentication
-                if (!empty($this->access_token)) {
+                if (! empty($this->access_token)) {
                     $headers['Authorization'] = 'Bearer ' . $this->access_token;
                 }
                 break;
 
             case self::AUTH_TYPE_SIGNED:
                 // HMAC signed requests
-                if (!empty($this->api_key)) {
+                if (! empty($this->api_key)) {
                     $headers['X-API-Key'] = $this->api_key;
                 }
                 break;
@@ -116,18 +116,18 @@ class WC_Key2Pay_Auth
     /**
      * Add authentication data to request body
      */
-    public function add_auth_to_body($request_data = array())
+    public function add_auth_to_body($request_data = [])
     {
         switch ($this->auth_type) {
             case self::AUTH_TYPE_BASIC:
                 // Add merchant ID and password to request body (current method)
                 $request_data['merchantid'] = $this->merchant_id;
-                $request_data['password'] = $this->password;
+                $request_data['password']   = $this->password;
                 break;
 
             case self::AUTH_TYPE_API_KEY:
                 // API key might be in body for some endpoints
-                if (!empty($this->api_key)) {
+                if (! empty($this->api_key)) {
                     $request_data['api_key'] = $this->api_key;
                 }
                 break;
@@ -182,7 +182,7 @@ class WC_Key2Pay_Auth
         $query_string = http_build_query($request_data);
 
         // Add endpoint if provided
-        if (!empty($endpoint)) {
+        if (! empty($endpoint)) {
             $signature_string = $endpoint . '?' . $query_string;
         } else {
             $signature_string = $query_string;
@@ -233,16 +233,16 @@ class WC_Key2Pay_Auth
     {
         switch ($this->auth_type) {
             case self::AUTH_TYPE_BASIC:
-                return !empty($this->merchant_id) && !empty($this->password);
+                return ! empty($this->merchant_id) && ! empty($this->password);
 
             case self::AUTH_TYPE_API_KEY:
-                return !empty($this->api_key);
+                return ! empty($this->api_key);
 
             case self::AUTH_TYPE_BEARER:
-                return !empty($this->access_token);
+                return ! empty($this->access_token);
 
             case self::AUTH_TYPE_SIGNED:
-                return !empty($this->api_key) && !empty($this->secret_key);
+                return ! empty($this->api_key) && ! empty($this->secret_key);
 
             default:
                 return false;

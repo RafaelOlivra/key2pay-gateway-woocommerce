@@ -22,14 +22,14 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
     public $has_fields;
     public $method_title;
     public $method_description;
-    public $title; // Loaded from settings
-    public $description; // Loaded from settings
-    public $enabled; // Loaded from settings
+    public $title;        // Loaded from settings
+    public $description;  // Loaded from settings
+    public $enabled;      // Loaded from settings
     public $api_base_url; // Loaded from settings
-    public $merchant_id; // Loaded from settings
-    public $password; // Loaded from settings
-    public $auth_type; // Loaded from settings
-    public $debug; // Loaded from settings
+    public $merchant_id;  // Loaded from settings
+    public $password;     // Loaded from settings
+    public $auth_type;    // Loaded from settings
+    public $debug;        // Loaded from settings
     public $log;
     // public $form_fields; // Managed by WC_Settings_API - DO NOT redeclare
     public WC_Key2Pay_Auth $auth_handler;
@@ -52,7 +52,6 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
      */
     public const PAYMENT_METHOD_TYPE = '';
 
-
     /**
      * STATUS CODES
      */
@@ -63,13 +62,13 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
     public const CODE_APPROVED = '0';
     public const CODE_CAPTURED = 'CAPTURED';
 
-    public const CODE_INSUFFICIENT_FUNDS = '51';
-    public const CODE_DO_NOT_HONOUR = '05';
-    public const CODE_RESTRICTED_CARD = '62';
+    public const CODE_INSUFFICIENT_FUNDS  = '51';
+    public const CODE_DO_NOT_HONOUR       = '05';
+    public const CODE_RESTRICTED_CARD     = '62';
     public const CODE_INVALID_TRANSACTION = '12';
 
     public const CODE_DEBIT_PENDING = '9';
-    public const CODE_DEBIT_FAILED = '6';
+    public const CODE_DEBIT_FAILED  = '6';
 
     /**
      * Constructor for the gateway base.
@@ -83,16 +82,16 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
     {
         // Initialize logger BEFORE anything else that might log.
         // This is safe to do here as it doesn't depend on WC_Payment_Gateway init.
-        $this->log = wc_get_logger();
+        $this->log             = wc_get_logger();
         $this->custom_log_file = WP_CONTENT_DIR . '/uploads/key2pay-gateway.log'; // Shared log file
 
         // Common hooks that use $this->id. $this->id MUST be set by the child
         // BEFORE its call to parent::__construct() for these hooks to be specific.
         // They are safe to define here once for all children.
-        add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
-        add_action('woocommerce_thankyou_' . $this->id, array($this, 'thankyou_page'));
-        add_action('woocommerce_api_' . strtolower($this->id), array($this, 'handle_webhook_callback'));
-        add_action('woocommerce_admin_field_api_base_url', array($this, 'validate_api_base_url'));
+        add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options']);
+        add_action('woocommerce_thankyou_' . $this->id, [$this, 'thankyou_page']);
+        add_action('woocommerce_api_' . strtolower($this->id), [$this, 'handle_webhook_callback']);
+        add_action('woocommerce_admin_field_api_base_url', [$this, 'validate_api_base_url']);
 
         // All other properties like $this->title, $this->description, $this->enabled,
         // and credentials will be loaded in the concrete child's constructor
@@ -107,15 +106,15 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
     public function setup_authentication_handler(): WC_Key2Pay_Auth
     {
         try {
-            // Initialize the authentication handler based on the auth type.
+                                                                                         // Initialize the authentication handler based on the auth type.
             $this->auth_handler = new WC_Key2Pay_Auth(WC_Key2Pay_Auth::AUTH_TYPE_BASIC); // Only Basic Auth is supported in this base class.
-            $this->auth_handler->set_credentials(array(
-                'merchant_id'  => $this->merchant_id,
-                'password'     => $this->password,
-            ));
+            $this->auth_handler->set_credentials([
+                'merchant_id' => $this->merchant_id,
+                'password'    => $this->password,
+            ]);
             $this->auth_handler->set_debug($this->debug);
         } catch (Exception $e) {
-            $this->log->error('Key2Pay Error: Failed to initialize auth handler: ' . $e->getMessage(), array('source' => $this->id));
+            $this->log->error('Key2Pay Error: Failed to initialize auth handler: ' . $e->getMessage(), ['source' => $this->id]);
         }
 
         return $this->auth_handler;
@@ -131,84 +130,84 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
     {
         $auth_types = WC_Key2Pay_Auth::get_auth_types();
 
-        $this->form_fields = array(
-            'enabled' => array(
+        $this->form_fields = [
+            'enabled'              => [
                 'title'   => __('Enable/Disable', 'key2pay'),
                 'type'    => 'checkbox',
                 'label'   => __('Enable Key2Pay Payment Method', 'key2pay'),
                 'default' => 'no',
-            ),
-            'title' => array(
+            ],
+            'title'                => [
                 'title'       => __('Title', 'key2pay'),
                 'type'        => 'text',
                 'description' => __('This controls the title which the user sees during checkout.', 'key2pay'),
                 'default'     => $this->method_title, // Uses the child's method_title
                 'desc_tip'    => true,
-            ),
-            'description' => array(
+            ],
+            'description'          => [
                 'title'       => __('Description', 'key2pay'),
                 'type'        => 'textarea',
                 'description' => __('This controls the description which the user sees during checkout.', 'key2pay'),
                 'default'     => $this->method_description, // Uses the child's method_description
                 'desc_tip'    => true,
-            ),
-            'auth_section' => array(
+            ],
+            'auth_section'         => [
                 'title'       => __('Key2Pay API Authentication', 'key2pay'),
                 'type'        => 'title',
                 'description' => __('Configure how to authenticate with the Key2Pay API. Consult your Key2Pay account manager for the correct method.', 'key2pay'),
-            ),
-            'auth_type' => array(
+            ],
+            'auth_type'            => [
                 'title'       => __('Authentication Method', 'key2pay'),
                 'type'        => 'select',
                 'description' => __('Select the authentication method for Key2Pay API requests.', 'key2pay'),
                 'options'     => $auth_types,
                 'default'     => WC_Key2Pay_Auth::AUTH_TYPE_BASIC,
                 'desc_tip'    => true,
-            ),
-            'merchant_id' => array(
+            ],
+            'merchant_id'          => [
                 'title'       => __('Merchant ID', 'key2pay'),
                 'type'        => 'text',
                 'description' => __('Your Key2Pay Merchant ID. Used for Basic Auth, and might be required for HMAC Signed.', 'key2pay'),
                 'default'     => '',
                 'desc_tip'    => true,
-            ),
-            'password' => array(
+            ],
+            'password'             => [
                 'title'       => __('Password', 'key2pay'),
                 'type'        => 'password',
                 'description' => __('Your Key2Pay API Password. Used for Basic Auth.', 'key2pay'),
                 'default'     => '',
                 'desc_tip'    => true,
-            ),
-            'api_base_url' => array(
-                'title'       => __('API Base URL', 'key2pay'),
-                'type'        => 'text',
-                'description' => __('Key2Pay API base URL. Use sandbox for testing, production for live payments. Ensure it ends with a slash if required by Key2Pay (e.g., https://api.key2payment.com/).', 'key2pay'),
-                'default'     => self::DEFAULT_API_BASE_URL,
-                'desc_tip'    => true,
-                'custom_attributes' => array(
+            ],
+            'api_base_url'         => [
+                'title'             => __('API Base URL', 'key2pay'),
+                'type'              => 'text',
+                'description'       => __('Key2Pay API base URL. Use sandbox for testing, production for live payments. Ensure it ends with a slash if required by Key2Pay (e.g., https://api.key2payment.com/).', 'key2pay'),
+                'default'           => self::DEFAULT_API_BASE_URL,
+                'desc_tip'          => true,
+                'custom_attributes' => [
                     'placeholder' => 'https://api.key2payment.com/',
-                ),
-            ),
-            'debug' => array(
+                ],
+            ],
+            'debug'                => [
                 'title'       => __('Debug Log', 'key2pay'),
                 'type'        => 'checkbox',
                 'label'       => __('Enable logging', 'key2pay'),
                 'default'     => 'no',
                 'description' => sprintf(__('Log Key2Pay payment events to <code>%s</code>.', 'key2pay'), esc_html(WP_CONTENT_DIR . '/uploads/key2pay-gateway.log')), // Direct path here for description
-            ),
-            'security_section' => array(
+            ],
+            'security_section'     => [
                 'title'       => __('Security Settings', 'key2pay'),
                 'type'        => 'title',
                 'description' => __('Configure security settings for payment processing.', 'key2pay'),
-            ),
-            'disable_url_fallback' => array(
+            ],
+            'disable_url_fallback' => [
                 'title'       => __('Disable URL Parameter Fallback', 'key2pay'),
                 'type'        => 'checkbox',
                 'label'       => __('Disable URL parameter processing for maximum security', 'key2pay'),
                 'default'     => 'yes',
                 'description' => __('When enabled, only webhooks will be used for payment status updates. URL parameters will be completely ignored. Recommended for production environments.', 'key2pay'),
-            ),
-        );
+            ],
+        ];
     }
 
     /**
@@ -260,7 +259,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
     {
         $order = wc_get_order($order_id);
 
-        if (!$order) {
+        if (! $order) {
             return;
         }
 
@@ -317,10 +316,10 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
      */
     protected function process_url_parameters_fallback($order)
     {
-        $result = !empty($_GET['result']) ? sanitize_text_field($_GET['result']) : '';
-        $response_code = !empty($_GET['responsecode']) ? sanitize_text_field($_GET['responsecode']) : '';
-        $track_id = !empty($_GET['trackid']) ? sanitize_text_field($_GET['trackid']) : '';
-        $response_description = !empty($_GET['responsedescription']) ? sanitize_text_field($_GET['responsedescription']) : '';
+        $result               = ! empty($_GET['result']) ? sanitize_text_field($_GET['result']) : '';
+        $response_code        = ! empty($_GET['responsecode']) ? sanitize_text_field($_GET['responsecode']) : '';
+        $track_id             = ! empty($_GET['trackid']) ? sanitize_text_field($_GET['trackid']) : '';
+        $response_description = ! empty($_GET['responsedescription']) ? sanitize_text_field($_GET['responsedescription']) : '';
 
         $this->log_to_file('Key2Pay Fallback: Processing result=' . $result . ', response_code=' . $response_code . ', track_id=' . $track_id . ', description=' . $response_description);
 
@@ -382,12 +381,12 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
         // Parse the webhook data
         $webhook_data = json_decode($raw_data, true);
 
-        if (!$webhook_data) {
+        if (! $webhook_data) {
             $this->log_to_file('Key2Pay Webhook: Failed to parse JSON data: ' . $raw_data);
             if ($this->debug) {
-                $this->log->error('Key2Pay Webhook: Failed to parse webhook data', array('source' => $this->id));
+                $this->log->error('Key2Pay Webhook: Failed to parse webhook data', ['source' => $this->id]);
             }
-            wp_send_json_error(array('message' => __('Invalid webhook data received.', 'key2pay')));
+            wp_send_json_error(['message' => __('Invalid webhook data received.', 'key2pay')]);
             exit();
         }
 
@@ -396,19 +395,19 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
         $this->log_to_file('Key2Pay Webhook: Parsed data: ' . print_r($safe_webhook_data, true));
 
         if ($this->debug) {
-            $this->log->debug('Key2Pay Webhook: Received payment data: ' . print_r($webhook_data, true), array('source' => $this->id));
+            $this->log->debug('Key2Pay Webhook: Received payment data: ' . print_r($webhook_data, true), ['source' => $this->id]);
         }
 
         // Extract order information per Key2Pay documentation
         // @see https://key2pay.readme.io/reference/webhooks-copy
-        $type = isset($webhook_data['type']) ? $webhook_data['type'] : '';
-        $result = isset($webhook_data['result']) ? $webhook_data['result'] : '';
-        $response_code = isset($webhook_data['responsecode']) ? $webhook_data['responsecode'] : '';
-        $track_id = isset($webhook_data['trackid']) ? $webhook_data['trackid'] : '';
-        $merchant_id = isset($webhook_data['merchantid']) ? $webhook_data['merchantid'] : '';
+        $type           = isset($webhook_data['type']) ? $webhook_data['type'] : '';
+        $result         = isset($webhook_data['result']) ? $webhook_data['result'] : '';
+        $response_code  = isset($webhook_data['responsecode']) ? $webhook_data['responsecode'] : '';
+        $track_id       = isset($webhook_data['trackid']) ? $webhook_data['trackid'] : '';
+        $merchant_id    = isset($webhook_data['merchantid']) ? $webhook_data['merchantid'] : '';
         $transaction_id = isset($webhook_data['transactionid']) ? $webhook_data['transactionid'] : '';
         $error_code_tag = isset($webhook_data['error_code_tag']) ? $webhook_data['error_code_tag'] : '';
-        $error_text = isset($webhook_data['error_text']) ? $webhook_data['error_text'] : '';
+        $error_text     = isset($webhook_data['error_text']) ? $webhook_data['error_text'] : '';
 
         $this->log_to_file('Key2Pay Webhook: Extracted fields - type: ' . $type . ', result: ' . $result . ', response_code: ' . $response_code . ', track_id: ' . $track_id . ', merchant_id: ' . $merchant_id . ', transaction_id: ' . $transaction_id);
 
@@ -423,23 +422,23 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
             $parts = explode('_', $track_id);
             if (count($parts) >= 2) {
                 $order_id = $parts[0];
-                $order = wc_get_order($order_id);
+                $order    = wc_get_order($order_id);
                 $this->log_to_file('Key2Pay Webhook: Extracted order_id: ' . $order_id . ' from track_id: ' . $track_id);
             }
         }
 
-        if (!$order) {
+        if (! $order) {
             $this->log_to_file('Key2Pay Webhook: Order not found for track_id: ' . $track_id);
             if ($this->debug) {
-                $this->log->error('Key2Pay Webhook: Order not found for track_id: ' . $track_id, array('source' => $this->id));
+                $this->log->error('Key2Pay Webhook: Order not found for track_id: ' . $track_id, ['source' => $this->id]);
             }
-            wp_send_json_error(array('message' => __('Order not found for track_id: ' . $track_id, 'key2pay')));
+            wp_send_json_error(['message' => __('Order not found for track_id: ' . $track_id, 'key2pay')]);
             exit();
         }
 
         $this->log_to_file('Key2Pay Webhook: Found order #' . $order->get_id() . ' - current status: ' . $order->get_status());
         if ($this->debug) {
-            $this->log->debug('Key2Pay Webhook: Processing payment for order #' . $order->get_id(), array('source' => $this->id));
+            $this->log->debug('Key2Pay Webhook: Processing payment for order #' . $order->get_id(), ['source' => $this->id]);
         }
 
         // Process the payment status based on Key2Pay gateway response codes
@@ -449,9 +448,9 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
         $this->log_to_file('Key2Pay Webhook: Final order status: ' . $order->get_status());
 
         // Always acknowledge the webhook
-        wp_send_json_success(array(
+        wp_send_json_success([
             'message' => __('Webhook processed successfully.', 'key2pay'),
-        ));
+        ]);
         exit();
     }
 
@@ -466,11 +465,11 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
      */
     protected function process_payment_result($order, $result, $transaction_id, $error_text)
     {
-        $numeric_code = $this->extract_status_code($result);
+        $numeric_code   = $this->extract_status_code($result);
         $status_message = $this->get_status_code_message($numeric_code);
 
         if ($this->debug) {
-            $this->log->debug('Key2Pay Gateway: Processing response code: ' . $numeric_code . ' for order #' . $order->get_id(), array('source' => $this->id));
+            $this->log->debug('Key2Pay Gateway: Processing response code: ' . $numeric_code . ' for order #' . $order->get_id(), ['source' => $this->id]);
         }
 
         switch ($numeric_code) {
@@ -478,58 +477,58 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
                 $order->payment_complete($transaction_id);
                 $order->add_order_note(sprintf(__('Key2Pay payment approved. Transaction ID: %s, [Code: %s] - %s', 'key2pay'), $transaction_id, $numeric_code, $status_message));
                 if ($this->debug) {
-                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' marked as paid (Code: ' . $numeric_code . ')', array('source' => $this->id));
+                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' marked as paid (Code: ' . $numeric_code . ')', ['source' => $this->id]);
                 }
                 break;
             case self::CODE_INSUFFICIENT_FUNDS:
                 $order->update_status('failed', sprintf(__('Key2Pay payment failed: %s. [Code: %s], Error: %s', 'key2pay'), $this->get_status_code_message($numeric_code), $numeric_code, $error_text));
                 if ($this->debug) {
-                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' failed - insufficient funds (Code: ' . $numeric_code . ')', array('source' => $this->id));
+                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' failed - insufficient funds (Code: ' . $numeric_code . ')', ['source' => $this->id]);
                 }
                 break;
             case self::CODE_DO_NOT_HONOUR:
                 $order->update_status('failed', sprintf(__('Key2Pay payment failed: %s. [Code: %s], Error: %s', 'key2pay'), $this->get_status_code_message($numeric_code), $numeric_code, $error_text));
                 if ($this->debug) {
-                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' failed - do not honour (Code: ' . $numeric_code . ')', array('source' => $this->id));
+                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' failed - do not honour (Code: ' . $numeric_code . ')', ['source' => $this->id]);
                 }
                 break;
             case self::CODE_RESTRICTED_CARD:
                 $order->update_status('failed', sprintf(__('Key2Pay payment failed: %s. [Code: %s], Error: %s', 'key2pay'), $this->get_status_code_message($numeric_code), $numeric_code, $error_text));
                 if ($this->debug) {
-                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' failed - restricted card (Code: ' . $numeric_code . ')', array('source' => $this->id));
+                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' failed - restricted card (Code: ' . $numeric_code . ')', ['source' => $this->id]);
                 }
                 break;
             case self::CODE_INVALID_TRANSACTION:
                 $order->update_status('failed', sprintf(__('Key2Pay payment failed: %s. [Code: %s], Error: %s', 'key2pay'), $this->get_status_code_message($numeric_code), $numeric_code, $error_text));
                 if ($this->debug) {
-                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' failed - invalid transaction (Code: ' . $numeric_code . ')', array('source' => $this->id));
+                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' failed - invalid transaction (Code: ' . $numeric_code . ')', ['source' => $this->id]);
                 }
                 break;
             case self::CODE_TIMEOUT:
                 $order->update_status('failed', sprintf(__('Key2Pay payment failed: %s. [Code: %s], Error: %s', 'key2pay'), $this->get_status_code_message($numeric_code), $numeric_code, $error_text));
                 if ($this->debug) {
-                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' failed - timeout (Code: ' . $numeric_code . ')', array('source' => $this->id));
+                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' failed - timeout (Code: ' . $numeric_code . ')', ['source' => $this->id]);
                 }
                 break;
             case self::CODE_DEBIT_PENDING:
                 // Thai Debit initial processing, treat as pending
                 $order->update_status('pending', sprintf(__('Key2Pay payment is processing. Transaction ID: %s, [Code: %s] - %s', 'key2pay'), $transaction_id, $numeric_code, $status_message));
                 if ($this->debug) {
-                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' marked as pending (Processing)', array('source' => $this->id));
+                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' marked as pending (Processing)', ['source' => $this->id]);
                 }
                 break;
             case self::CODE_DEBIT_FAILED:
                 // Thai Debit failed, treat as failed
                 $order->update_status('failed', sprintf(__('Key2Pay payment failed: %s. [Code: %s], Error: %s', 'key2pay'), $this->get_status_code_message($numeric_code), $numeric_code, $error_text));
                 if ($this->debug) {
-                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' failed', array('source' => $this->id));
+                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' failed', ['source' => $this->id]);
                 }
                 break;
             case self::CODE_CAPTURED:
                 $order->payment_complete($transaction_id);
                 $order->add_order_note(sprintf(__('Key2Pay payment completed successfully. Transaction ID: %s, [Code: %s] - %s', 'key2pay'), $transaction_id, $numeric_code, $status_message));
                 if ($this->debug) {
-                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' marked as paid (CAPTURED)', array('source' => $this->id));
+                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' marked as paid (CAPTURED)', ['source' => $this->id]);
                 }
                 break;
             default:
@@ -539,7 +538,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
                 $order->payment_complete($transaction_id);
                 $order->add_order_note(sprintf(__('Key2Pay payment processed with unknown response code. Transaction ID: %s, [Code: %s] - %s', 'key2pay'), $transaction_id, $numeric_code, $status_message));
                 if ($this->debug) {
-                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' marked as paid (unknown code: ' . $numeric_code . ')', array('source' => $this->id));
+                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' marked as paid (unknown code: ' . $numeric_code . ')', ['source' => $this->id]);
                 }
                 break;
         }
@@ -568,7 +567,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
                 return __('Payment failed: Restricted card. This card cannot be used for this transaction.', 'key2pay');
             case self::CODE_INVALID_TRANSACTION:
                 return __('Payment failed: Invalid transaction. The transaction details are not valid.', 'key2pay');
-            case self::CODE_TIMEOUT :
+            case self::CODE_TIMEOUT:
                 return __('Payment failed: Transaction timeout. The request took too long to process.', 'key2pay');
             case self::CODE_DEBIT_PENDING:
                 return __('Payment processing: Awaiting confirmation.', 'key2pay');
@@ -600,7 +599,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
                 return __('Sorry, this card cannot be used for this transaction. Please try a different card or contact your bank.', 'key2pay');
             case self::CODE_INVALID_TRANSACTION:
                 return __('Sorry, there was an issue with the transaction details. Please check your information and try again.', 'key2pay');
-            case self::CODE_TIMEOUT :
+            case self::CODE_TIMEOUT:
                 return __('Sorry, the payment request timed out. Please try again or contact support if the problem persists.', 'key2pay');
             case self::CODE_DEBIT_PENDING:
                 return __('Sorry, your payment is still processing. Please wait for confirmation.', 'key2pay');
@@ -619,13 +618,13 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
      */
     protected function get_user_friendly_error_message_for_failed_order($order)
     {
-        $order_notes = wc_get_order_notes(array(
+        $order_notes = wc_get_order_notes([
             'order_id' => $order->get_id(),
-            'type' => 'customer',
-            'limit' => 10
-        ));
+            'type'     => 'customer',
+            'limit'    => 10,
+        ]);
 
-        $error_codes = array(
+        $error_codes = [
             self::CODE_INVALID_CREDENTIALS,
             self::CODE_APPROVED,
             self::CODE_INSUFFICIENT_FUNDS,
@@ -633,8 +632,8 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
             self::CODE_INVALID_TRANSACTION,
             self::CODE_TIMEOUT,
             self::CODE_DEBIT_PENDING,
-            self::CODE_DEBIT_FAILED
-        );
+            self::CODE_DEBIT_FAILED,
+        ];
 
         foreach ($order_notes as $note) {
             $content = $note->content;
@@ -729,30 +728,30 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
     public function process_refund($order_id, $amount = null, $reason = '')
     {
         // Retrieve transaction ID from order meta
-        $order = wc_get_order($order_id);
+        $order          = wc_get_order($order_id);
         $transaction_id = $order->get_meta('_key2pay_transaction_id');
-        $amount = (float) $order->get_total();
-        $currency = $order->get_currency();
-        $email = $order->get_billing_email();
-        $endpoint = $this->build_api_url('/transaction/refund');
+        $amount         = (float) $order->get_total();
+        $currency       = $order->get_currency();
+        $email          = $order->get_billing_email();
+        $endpoint       = $this->build_api_url('/transaction/refund');
 
         if (empty($transaction_id)) {
-            $this->log->error('Key2Pay Refund: No transaction ID found for order #' . $order_id, array('source' => $this->id));
+            $this->log->error('Key2Pay Refund: No transaction ID found for order #' . $order_id, ['source' => $this->id]);
             return false;
         }
 
         // Prepare refund data
-        $refund_data = array(
-            'transactionid' => $transaction_id,
-            'tranid'        => $transaction_id,
-            'trackid'       => $email, // Using email as track ID for refund
-            'bill_amount'   => $amount,
+        $refund_data = [
+            'transactionid'     => $transaction_id,
+            'tranid'            => $transaction_id,
+            'trackid'           => $email, // Using email as track ID for refund
+            'bill_amount'       => $amount,
             'bill_currencycode' => $currency,
-            'reason'        => $reason,
-        );
+            'reason'            => $reason,
+        ];
         $refund_data = $this->auth_handler->add_auth_to_body($refund_data);
 
-        $headers = array('Content-Type' => 'application/json');
+        $headers = ['Content-Type' => 'application/json'];
         $headers = array_merge($headers, $this->auth_handler->get_auth_headers());
 
         $this->log_to_file('Key2Pay Refund Request: Preparing to send refund for order #' . $order_id);
@@ -760,18 +759,18 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
 
         $response = wp_remote_post(
             $endpoint,
-            array(
+            [
                 'method'    => 'POST',
                 'headers'   => $headers,
                 'body'      => json_encode($refund_data),
                 'timeout'   => 60,
                 'sslverify' => true,
-            )
+            ]
         );
 
         if (is_wp_error($response)) {
             $error_message = $response->get_error_message();
-            $this->log->error(sprintf('Key2Pay Refund API Request Failed for order #%s: %s', $order_id, $error_message), array('source' => $this->id));
+            $this->log->error(sprintf('Key2Pay Refund API Request Failed for order #%s: %s', $order_id, $error_message), ['source' => $this->id]);
             return false;
         }
 
@@ -779,7 +778,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
         $data = json_decode($body);
 
         if ($this->debug) {
-            $this->log->debug(sprintf('Key2Pay Refund API Response for order #%s: %s', $order_id, print_r($data, true)), array('source' => $this->id));
+            $this->log->debug(sprintf('Key2Pay Refund API Response for order #%s: %s', $order_id, print_r($data, true)), ['source' => $this->id]);
         }
 
         // Key2Pay refund specific success/failure logic
@@ -788,13 +787,13 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
         if (isset($data->type) && 'valid' === $data->type && isset($data->result) && ($data->result === 'CAPTURED' || $data->result === 'Success' || $data->responsecode == self::CODE_APPROVED)) {
             $order->add_order_note(sprintf(__('Key2Pay Refund successful. Amount: %s. Reason: %s. Transaction ID: %s', 'key2pay'), wc_price($amount), $reason, $transaction_id));
             if ($this->debug) {
-                $this->log->debug('Key2Pay Refund: Order #' . $order_id . ' refund successful.', array('source' => $this->id));
+                $this->log->debug('Key2Pay Refund: Order #' . $order_id . ' refund successful.', ['source' => $this->id]);
             }
             return true;
         } else {
             $error_message = isset($data->error_text) ? $data->error_text : __('An unknown error occurred during Key2Pay refund.', 'key2pay');
             $order->add_order_note(sprintf(__('Key2Pay Refund failed. Amount: %s. Reason: %s. Error: %s', 'key2pay'), wc_price($amount), $reason, $error_message));
-            $this->log->error(sprintf('Key2Pay Refund Failed for order #%s: %s', $order_id, $error_message), array('source' => $this->id));
+            $this->log->error(sprintf('Key2Pay Refund Failed for order #%s: %s', $order_id, $error_message), ['source' => $this->id]);
             return false;
         }
     }
@@ -823,7 +822,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
     {
         $value = $this->get_option($key);
 
-        if (!empty($value) && !filter_var($value, FILTER_VALIDATE_URL)) {
+        if (! empty($value) && ! filter_var($value, FILTER_VALIDATE_URL)) {
             WC_Admin_Settings::add_error(__('API Base URL must be a valid URL.', 'key2pay'));
             return false;
         }
@@ -846,7 +845,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
         }
 
         // Validate credentials based on selected authentication type
-        if (!$this->auth_handler->is_configured()) {
+        if (! $this->auth_handler->is_configured()) {
             $this->log_to_file('Key2Pay Debug: Missing credentials for ' . $this->id . ' with auth type ' . $this->auth_type);
 
             if (is_admin() && current_user_can('manage_woocommerce') && (! defined('DOING_AJAX') || ! DOING_AJAX)) {
@@ -869,7 +868,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
     protected function redact_sensitive_data($array)
     {
         // Currently, this method only redacts specific keys.
-        if (!is_array($array)) {
+        if (! is_array($array)) {
             return $array; // If not an array, return as is
         }
 
@@ -882,7 +881,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
             'card',
             'cardholder',
             'authcode',
-            'token'
+            'token',
         ];
 
         foreach ($forbidden_keys as $key) {

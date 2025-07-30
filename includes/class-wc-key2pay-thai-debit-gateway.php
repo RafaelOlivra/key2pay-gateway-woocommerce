@@ -30,17 +30,14 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
     public function __construct()
     {
         // 1. Set specific properties for THIS gateway. These MUST be set BEFORE parent::__construct().
-        $this->id                   = 'key2pay_thai_debit';
-        $this->icon                 = KEY2PAY_PLUGIN_URL . 'assets/images/key2pay.png';
-        $this->has_fields           = true; // This gateway requires input fields on checkout.
-        $this->method_title         = __('Key2Pay Thai Debit (QR Payment)', 'key2pay');
-        $this->method_description   = __('Pay using Thai QR debit payments via Key2Pay.', 'key2pay');
+        $this->id                 = 'key2pay_thai_debit';
+        $this->icon               = KEY2PAY_PLUGIN_URL . 'assets/images/key2pay.png';
+        $this->has_fields         = true; // This gateway requires input fields on checkout.
+        $this->method_title       = __('Key2Pay Thai Debit (QR Payment)', 'key2pay');
+        $this->method_description = __('Pay using Thai QR debit payments via Key2Pay.', 'key2pay');
 
-        // 2. Call the parent constructor (WC_Payment_Gateway).
-        // This will call init_form_fields() and init_settings() from the parent chain.
+        // 2. Call the parent constructor (WC_Payment_Gateway) and initialize settings.
         parent::__construct();
-
-        // Load the settings.
         $this->init_form_fields();
         $this->init_settings();
 
@@ -62,16 +59,6 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
     }
 
     /**
-     * Initialize Gateway Settings Form Fields.
-     * Overrides parent to add specific fields for this gateway.
-     */
-    public function init_form_fields()
-    {
-        parent::init_form_fields(); // Get common fields from the base class
-        // No specific changes needed here as the base class already provides the auth fields.
-    }
-
-    /**
      * Payment fields for Thai Debit.
      * This will display input fields for payer_account_no, payer_account_name, payer_bank_code.
      * Overrides base class method.
@@ -87,29 +74,29 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         echo '<fieldset id="key2pay_thai_debit_form" class="wc-payment-form wc-payment-form-thai-debit">';
 
         // We may want a dropdown for bank codes if Key2Pay provides a list
-        woocommerce_form_field('payer_bank_code', array(
+        woocommerce_form_field('payer_bank_code', [
             'type'        => 'text', // Can be select if you have a list of banks
             'label'       => __('Bank Code', 'key2pay'),
             'placeholder' => __('e.g., 014', 'key2pay'),
             'required'    => true,
             'default'     => '',
-        ), $this->get_posted_data('payer_bank_code'));
+        ], $this->get_posted_data('payer_bank_code'));
 
-        woocommerce_form_field('payer_account_no', array(
+        woocommerce_form_field('payer_account_no', [
             'type'        => 'text',
             'label'       => __('Bank Account Number', 'key2pay'),
             'placeholder' => __('Enter your debit account number', 'key2pay'),
             'required'    => true,
             'default'     => '',
-        ), $this->get_posted_data('payer_account_no'));
+        ], $this->get_posted_data('payer_account_no'));
 
-        woocommerce_form_field('payer_account_name', array(
+        woocommerce_form_field('payer_account_name', [
             'type'        => 'text',
             'label'       => __('Bank Account Name', 'key2pay'),
             'placeholder' => __('Name on your debit account', 'key2pay'),
             'required'    => true,
             'default'     => '',
-        ), $this->get_posted_data('payer_account_name'));
+        ], $this->get_posted_data('payer_account_name'));
 
         echo '</fieldset>';
     }
@@ -122,7 +109,7 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
     {
         // Call parent validation first if any common validation is needed, e.g., for credentials
         $parent_validation = parent::validate_fields();
-        if (!$parent_validation) {
+        if (! $parent_validation) {
             return false;
         }
 
@@ -169,41 +156,41 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         $payer_bank_code    = $this->get_posted_data('payer_bank_code');
 
         // Prepare data for Key2Pay Thai Debit API request.
-        $amount           = (float) $order->get_total();
-        $currency         = $order->get_currency();
-        $customer_ip      = WC_Geolocation::get_ip_address();
-        $endpoint         = $this->build_api_url('/transaction/s2s');
-        $return_url       = $this->get_return_url($order);
-        $server_url       = home_url('/wc-api/' . strtolower($this->id));
+        $amount      = (float) $order->get_total();
+        $currency    = $order->get_currency();
+        $customer_ip = WC_Geolocation::get_ip_address();
+        $endpoint    = $this->build_api_url('/transaction/s2s');
+        $return_url  = $this->get_return_url($order);
+        $server_url  = home_url('/wc-api/' . strtolower($this->id));
 
-        $request_data = array(
-            'payment_method'      => array('type' => self::PAYMENT_METHOD_TYPE), // 'THAI_DEBIT'
-            'trackid'             => $order->get_id() . '_' . time(),
-            'bill_currencycode'   => $currency,
-            'bill_amount'         => $amount,
-            'bill_country'        => $order->get_billing_country() ?: '',
-            'bill_customerip'     => $customer_ip,
-            'bill_email'          => $order->get_billing_email(),
-            'returnUrl'           => $return_url,
-            'serverUrl'           => $server_url,
-            'payer_account_no'    => $payer_account_no,
-            'payer_account_name'  => $payer_account_name,
-            'payer_bank_code'     => $payer_bank_code,
-            'productdesc'         => sprintf(__('Order %s from %s', 'key2pay'), $order->get_order_number(), get_bloginfo('name')),
+        $request_data = [
+            'payment_method'       => ['type' => self::PAYMENT_METHOD_TYPE], // 'THAI_DEBIT'
+            'trackid'              => $order->get_id() . '_' . time(),
+            'bill_currencycode'    => $currency,
+            'bill_amount'          => $amount,
+            'bill_country'         => $order->get_billing_country() ?: '',
+            'bill_customerip'      => $customer_ip,
+            'bill_email'           => $order->get_billing_email(),
+            'returnUrl'            => $return_url,
+            'serverUrl'            => $server_url,
+            'payer_account_no'     => $payer_account_no,
+            'payer_account_name'   => $payer_account_name,
+            'payer_bank_code'      => $payer_bank_code,
+            'productdesc'          => sprintf(__('Order %s from %s', 'key2pay'), $order->get_order_number(), get_bloginfo('name')),
             'returnUrl_on_failure' => $order->get_checkout_payment_url(false),
-            'lang'                => self::DEFAULT_LANGUAGE,
-            'bill_phone'          => $order->get_billing_phone() ?: '',
-            'bill_city'           => $order->get_billing_city() ?: '',
-            'bill_state'          => $order->get_billing_state() ?: '',
-            'bill_address'        => $order->get_billing_address_1() ?: '',
-            'bill_zip'            => $order->get_billing_postcode(),
-        );
+            'lang'                 => self::DEFAULT_LANGUAGE,
+            'bill_phone'           => $order->get_billing_phone() ?: '',
+            'bill_city'            => $order->get_billing_city() ?: '',
+            'bill_state'           => $order->get_billing_state() ?: '',
+            'bill_address'         => $order->get_billing_address_1() ?: '',
+            'bill_zip'             => $order->get_billing_postcode(),
+        ];
 
         // Add authentication data to request body (for Basic Auth, merchantid and password)
         $request_data = $this->auth_handler->add_auth_to_body($request_data);
 
         // Get authentication headers (e.g., API Key, Bearer Token - empty for Basic Auth)
-        $headers = array('Content-Type' => 'application/json');
+        $headers = ['Content-Type' => 'application/json'];
         $headers = array_merge($headers, $this->auth_handler->get_auth_headers());
 
         // Log the complete request data before sending
@@ -223,13 +210,13 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         // Make the API call to Key2Pay Thai Debit endpoint.
         $response = wp_remote_post(
             $endpoint,
-            array(
+            [
                 'method'    => 'POST',
                 'headers'   => $headers,
                 'body'      => json_encode($request_data),
                 'timeout'   => 60,
                 'sslverify' => true,
-            )
+            ]
         );
 
         if (is_wp_error($response)) {
@@ -238,10 +225,10 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
             if ($this->debug) {
                 $this->log_to_file(sprintf('Key2Pay Thai Debit API Request Failed for order #%s: %s', $order_id, $error_message));
             }
-            return array(
+            return [
                 'result'   => 'failure',
                 'redirect' => '',
-            );
+            ];
         }
 
         $body = wp_remote_retrieve_body($response);
@@ -254,7 +241,7 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         // Process the API response.
         // @see https://key2pay.readme.io/reference/debitsolution
         if (isset($data->type) && 'valid' === $data->type) {
-            if (!empty($data->redirectUrl)) {
+            if (! empty($data->redirectUrl)) {
 
                 // Expect transactionid to be present in the response
                 if (empty($data->transactionid)) {
@@ -262,10 +249,10 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
                     if ($this->debug) {
                         $this->log_to_file(sprintf('Key2Pay Thai Debit Missing Transaction ID for order #%s', $order_id));
                     }
-                    return array(
+                    return [
                         'result'   => 'failure',
                         'redirect' => esc_url_raw($data->redirectUrl),
-                    );
+                    ];
                 }
 
                 // Payment session created successfully, redirect customer to Key2Pay.
@@ -280,10 +267,10 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
                 }
                 $order->save();
 
-                return array(
+                return [
                     'result'   => 'success',
                     'redirect' => esc_url_raw($data->redirectUrl),
-                );
+                ];
             } else {
                 // Valid response but no redirect URL, which is unexpected for Thai Debit QR.
                 wc_add_notice($this->get_user_friendly_error_message($data), 'error');
@@ -291,10 +278,10 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
                 if ($this->debug) {
                     $this->log_to_file(sprintf('Key2Pay Thai Debit Missing Redirect URL for order #%s: %s', $order_id, $error_message));
                 }
-                return array(
+                return [
                     'result'   => 'failure',
                     'redirect' => '',
-                );
+                ];
             }
         } else {
             // Payment session creation failed or API returned an error.
@@ -303,10 +290,10 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
             if ($this->debug) {
                 $this->log_to_file(sprintf('Key2Pay Thai Debit API Error for order #%s: %s', $order_id, $error_message));
             }
-            return array(
+            return [
                 'result'   => 'failure',
                 'redirect' => '',
-            );
+            ];
         }
     }
 }

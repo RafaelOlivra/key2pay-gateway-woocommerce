@@ -31,18 +31,14 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
     public function __construct()
     {
         // 1. Set specific properties for THIS gateway. These MUST be set BEFORE parent::__construct().
-        $this->id                   = 'key2pay_credit';
-        $this->icon                 = KEY2PAY_PLUGIN_URL . 'assets/images/key2pay.png';
-        $this->has_fields           = false; // No fields on checkout for this gateway
-        $this->method_title         = __('Key2Pay Credit Card', 'key2pay');
-        $this->method_description   = __('Pay with credit card via Key2Pay with maximum security.', 'key2pay');
+        $this->id                 = 'key2pay_credit';
+        $this->icon               = KEY2PAY_PLUGIN_URL . 'assets/images/key2pay.png';
+        $this->has_fields         = false; // No fields on checkout for this gateway
+        $this->method_title       = __('Key2Pay Credit Card', 'key2pay');
+        $this->method_description = __('Pay with credit card via Key2Pay with maximum security.', 'key2pay');
 
-        // 2. Call the parent constructor (WC_Payment_Gateway).
-        // This will call init_form_fields() and init_settings() from the parent chain.
-        // It's crucial that this call is here AFTER setting the basic gateway properties.
+        // 2. Call the parent constructor (WC_Payment_Gateway) and initialize settings.
         parent::__construct();
-
-        // Load the settings.
         $this->init_form_fields();
         $this->init_settings();
 
@@ -61,15 +57,6 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
         $this->setup_authentication_handler();
 
         // Parent (WC_Key2Pay_Gateway_Base) constructor already added common hooks, no need to redeclare.
-    }
-
-    /**
-     * Initialize Gateway Settings Form Fields.
-     * Overrides parent to inherit and then potentially remove/adjust fields that are now managed centrally.
-     */
-    public function init_form_fields()
-    {
-        parent::init_form_fields(); // Get common fields from the base class
     }
 
     /**
@@ -101,39 +88,39 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
         }
 
         // Prepare data for Key2Pay Credit Card API request.
-        $amount             = (float) $order->get_total();
-        $currency           = $order->get_currency();
-        $customer_ip        = WC_Geolocation::get_ip_address();
-        $endpoint           = $this->build_api_url('/PaymentToken/Create');
-        $return_url         = $this->get_return_url($order);
-        $server_url         = home_url('/wc-api/' . strtolower($this->id)); // Webhook endpoint for this gateway.
+        $amount      = (float) $order->get_total();
+        $currency    = $order->get_currency();
+        $customer_ip = WC_Geolocation::get_ip_address();
+        $endpoint    = $this->build_api_url('/PaymentToken/Create');
+        $return_url  = $this->get_return_url($order);
+        $server_url  = home_url('/wc-api/' . strtolower($this->id)); // Webhook endpoint for this gateway.
 
         // Initial request data for API call
-        $request_data = array(
-            'payment_method'        => array('type' => self::PAYMENT_METHOD_TYPE), // 'CARD'
-            'trackid'               => $order->get_id() . '_' . time(),
-            'bill_currencycode'     => $currency,
-            'bill_amount'           => $amount,
-            'returnUrl'             => $return_url,
-            'returnUrl_on_failure'  => $order->get_checkout_payment_url(false),
-            'serverUrl'             => $server_url,
-            'productdesc'           => sprintf(__('Order %s from %s', 'key2pay'), $order->get_order_number(), get_bloginfo('name')),
-            'bill_customerip'       => $customer_ip,
-            'bill_phone'            => $order->get_billing_phone() ?: '',
-            'bill_email'            => $order->get_billing_email(),
-            'bill_country'          => $order->get_billing_country() ?: '',
-            'bill_city'             => $order->get_billing_city() ?: '',
-            'bill_state'            => $order->get_billing_state() ?: '',
-            'bill_address'          => $order->get_billing_address_1() ?: '',
-            'bill_zip'              => $order->get_billing_postcode(),
-            'lang'                  => self::DEFAULT_LANGUAGE,
-        );
+        $request_data = [
+            'payment_method'       => ['type' => self::PAYMENT_METHOD_TYPE], // 'CARD'
+            'trackid'              => $order->get_id() . '_' . time(),
+            'bill_currencycode'    => $currency,
+            'bill_amount'          => $amount,
+            'returnUrl'            => $return_url,
+            'returnUrl_on_failure' => $order->get_checkout_payment_url(false),
+            'serverUrl'            => $server_url,
+            'productdesc'          => sprintf(__('Order %s from %s', 'key2pay'), $order->get_order_number(), get_bloginfo('name')),
+            'bill_customerip'      => $customer_ip,
+            'bill_phone'           => $order->get_billing_phone() ?: '',
+            'bill_email'           => $order->get_billing_email(),
+            'bill_country'         => $order->get_billing_country() ?: '',
+            'bill_city'            => $order->get_billing_city() ?: '',
+            'bill_state'           => $order->get_billing_state() ?: '',
+            'bill_address'         => $order->get_billing_address_1() ?: '',
+            'bill_zip'             => $order->get_billing_postcode(),
+            'lang'                 => self::DEFAULT_LANGUAGE,
+        ];
 
         // Add authentication data to request body if needed (e.g., Basic Auth)
         $request_data = $this->auth_handler->add_auth_to_body($request_data);
 
         // Get authentication headers (e.g., API Key, Bearer Token)
-        $headers = array('Content-Type' => 'application/json');
+        $headers = ['Content-Type' => 'application/json'];
         $headers = array_merge($headers, $this->auth_handler->get_auth_headers());
 
         // Log the complete request data before sending
@@ -153,13 +140,13 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
         // Make the API call to Key2Pay Credit Card endpoint.
         $response = wp_remote_post(
             $endpoint,
-            array(
+            [
                 'method'    => 'POST',
                 'headers'   => $headers,
                 'body'      => json_encode($request_data),
                 'timeout'   => 60,
                 'sslverify' => true,
-            )
+            ]
         );
 
         if (is_wp_error($response)) {
@@ -168,10 +155,10 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
             if ($this->debug) {
                 $this->log_to_file(sprintf('Key2Pay redirect API Request Failed for order #%s: %s', $order_id, $error_message));
             }
-            return array(
+            return [
                 'result'   => 'failure',
                 'redirect' => '',
-            );
+            ];
         }
 
         $body = wp_remote_retrieve_body($response);
@@ -188,22 +175,22 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
                 $order->update_status('pending', __('Awaiting Key2Pay payment confirmation.', 'key2pay'));
 
                 // Store Key2Pay transaction details.
-                if (!empty($data->transactionid)) {
+                if (! empty($data->transactionid)) {
                     $order->update_meta_data('_key2pay_transaction_id', $data->transactionid);
                 }
-                if (!empty($data->trackid)) {
+                if (! empty($data->trackid)) {
                     $order->update_meta_data('_key2pay_track_id', $data->trackid);
                 }
-                if (!empty($data->token)) {
+                if (! empty($data->token)) {
                     $order->update_meta_data('_key2pay_token', $data->token);
                 }
 
                 $order->save();
 
-                return array(
+                return [
                     'result'   => 'success',
                     'redirect' => esc_url_raw($data->redirectUrl),
-                );
+                ];
             } else {
                 // Valid response but no redirect URL, which is unexpected.
                 $error_message = isset($data->error_text) ? $data->error_text : __('Payment session created, but no redirection URL received.', 'key2pay');
@@ -211,10 +198,10 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
                 if ($this->debug) {
                     $this->log_to_file(sprintf('Key2Pay redirect Missing Redirect URL for order #%s: %s', $order_id, $error_message));
                 }
-                return array(
+                return [
                     'result'   => 'failure',
                     'redirect' => '',
-                );
+                ];
             }
         } else {
             // Payment session creation failed or API returned an error.
@@ -223,10 +210,10 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
             if ($this->debug) {
                 $this->log_to_file(sprintf('Key2Pay redirect API Error for order #%s: %s', $order_id, $error_message));
             }
-            return array(
+            return [
                 'result'   => 'failure',
                 'redirect' => '',
-            );
+            ];
         }
     }
 }
