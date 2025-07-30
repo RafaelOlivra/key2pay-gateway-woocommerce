@@ -25,6 +25,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
     public $title; // Loaded from settings
     public $description; // Loaded from settings
     public $enabled; // Loaded from settings
+    public $api_base_url; // Loaded from settings
     public $merchant_id; // Loaded from settings
     public $password; // Loaded from settings
     public $auth_type; // Loaded from settings
@@ -55,6 +56,8 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
     /**
      * STATUS CODES
      */
+    public const CODE_INVALID_CREDENTIALS = '1000';
+
     public const CODE_TIMEOUT = '9998';
 
     public const CODE_APPROVED = '0';
@@ -323,7 +326,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
 
         // Only process if order is still pending (webhook hasn't processed it yet)
         if ($order->has_status('pending')) {
-            $numeric_code = $this->extract_numeric_code($response_code);
+            $numeric_code = $this->extract_status_code($response_code);
 
             $this->log_to_file('Key2Pay Fallback: Order #' . $order->get_id() . ' is pending, processing with code: ' . $numeric_code);
 
@@ -463,7 +466,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
      */
     protected function process_payment_result($order, $result, $transaction_id, $error_text)
     {
-        $numeric_code = $this->extract_numeric_code($result);
+        $numeric_code = $this->extract_status_code($result);
         $status_message = $this->get_status_code_message($numeric_code);
 
         if ($this->debug) {
@@ -550,7 +553,11 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
      */
     protected function get_status_code_message($code)
     {
+        $code = $this->extract_status_code($code);
+
         switch ($code) {
+            case self::CODE_INVALID_CREDENTIALS:
+                return __('Payment failed: Invalid credentials. Please check your merchant ID and password.', 'key2pay');
             case self::CODE_APPROVED:
                 return __('Payment approved successfully.', 'key2pay');
             case self::CODE_INSUFFICIENT_FUNDS:
@@ -561,7 +568,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
                 return __('Payment failed: Restricted card. This card cannot be used for this transaction.', 'key2pay');
             case self::CODE_INVALID_TRANSACTION:
                 return __('Payment failed: Invalid transaction. The transaction details are not valid.', 'key2pay');
-            case self::CODE_TRANSACTION_TIMEOUT:
+            case self::CODE_TIMEOUT :
                 return __('Payment failed: Transaction timeout. The request took too long to process.', 'key2pay');
             case self::CODE_DEBIT_PENDING:
                 return __('Payment processing: Awaiting confirmation.', 'key2pay');
@@ -580,6 +587,8 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
      */
     protected function get_user_friendly_error_message($code)
     {
+        $code = $this->extract_status_code($code);
+
         switch ($code) {
             case self::CODE_APPROVED:
                 return __('Your payment has been approved successfully!', 'key2pay');
@@ -591,7 +600,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
                 return __('Sorry, this card cannot be used for this transaction. Please try a different card or contact your bank.', 'key2pay');
             case self::CODE_INVALID_TRANSACTION:
                 return __('Sorry, there was an issue with the transaction details. Please check your information and try again.', 'key2pay');
-            case self::CODE_TRANSACTION_TIMEOUT:
+            case self::CODE_TIMEOUT :
                 return __('Sorry, the payment request timed out. Please try again or contact support if the problem persists.', 'key2pay');
             case self::CODE_DEBIT_PENDING:
                 return __('Sorry, your payment is still processing. Please wait for confirmation.', 'key2pay');
@@ -610,30 +619,31 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
      */
     protected function get_user_friendly_error_message_for_failed_order($order)
     {
-        $notes = wc_get_order_notes(array(
+        $order_notes = wc_get_order_notes(array(
             'order_id' => $order->get_id(),
             'type' => 'customer',
             'limit' => 10
         ));
 
-        foreach ($notes as $note) {
+        $error_codes = array(
+            self::CODE_INVALID_CREDENTIALS,
+            self::CODE_APPROVED,
+            self::CODE_INSUFFICIENT_FUNDS,
+            self::CODE_RESTRICTED_CARD,
+            self::CODE_INVALID_TRANSACTION,
+            self::CODE_TIMEOUT,
+            self::CODE_DEBIT_PENDING,
+            self::CODE_DEBIT_FAILED
+        );
+
+        foreach ($order_notes as $note) {
             $content = $note->content;
 
-            switch (true) {
-                case strpos($content, '[Code: '.self::CODE_APPROVED) !== false:
-                    return $this->get_user_friendly_error_message(self::CODE_APPROVED);
-                case strpos($content, '[Code: '.self::CODE_INSUFFICIENT_FUNDS) !== false:
-                    return $this->get_user_friendly_error_message(self::CODE_INSUFFICIENT_FUNDS);
-                case strpos($content, '[Code: '.self::CODE_RESTRICTED_CARD) !== false:
-                    return $this->get_user_friendly_error_message(self::CODE_RESTRICTED_CARD);
-                case strpos($content, '[Code: '.self::CODE_INVALID_TRANSACTION) !== false:
-                    return $this->get_user_friendly_error_message(self::CODE_INVALID_TRANSACTION);
-                case strpos($content, '[Code: '.self::CODE_TRANSACTION_TIMEOUT) !== false:
-                    return $this->get_user_friendly_error_message(self::CODE_TRANSACTION_TIMEOUT);
-                case strpos($content, '[Code: '.self::CODE_DEBIT_PENDING) !== false:
-                    return $this->get_user_friendly_error_message(self::CODE_DEBIT_PENDING);
-                case strpos($content, '[Code: '.self::CODE_DEBIT_FAILED) !== false:
-                    return $this->get_user_friendly_error_message(self::CODE_DEBIT_FAILED);
+            // Check if the note contains any of the known error codes
+            foreach ($error_codes as $code) {
+                if (strpos($content, '[Code: ' . $code) !== false) {
+                    return $this->get_user_friendly_error_message($code);
+                }
             }
         }
 
@@ -641,13 +651,43 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
     }
 
     /**
-     * Extract numeric code from response code, handling currency prefixes.
+     * Extract status code from response code, handling currency prefixes.
      *
-     * @param string $code The response code (e.g., "EGP9998", "USD51", "9998").
-     * @return string The numeric code (e.g., "9998", "51", "9998").
+     * @param string|array $code The response code (e.g., "EGP9998", "USD51", "9998").
+     * @return string The status code (e.g., "9998", "51", "9998").
      */
-    protected function extract_numeric_code($code)
+    protected function extract_status_code($code)
     {
+
+        $know_keys = ['responsecode', 'error_code_tag', 'error_text'];
+
+        // If it's a class instance, attempt to convert to an array
+        if (is_object($code)) {
+            if (method_exists($code, 'to_array')) {
+                $code = $code->to_array();
+            } elseif (method_exists($code, 'get_data')) {
+                $code = $code->get_data();
+            } else {
+                // Check for known keys in the object
+                foreach ($know_keys as $key) {
+                    if (isset($code->$key)) {
+                        $code = $code->$key;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // If it's an array, attempt to extract the code from known keys
+        if (is_array($code)) {
+            foreach ($know_keys as $key) {
+                if (isset($code[$key])) {
+                    $code = $code[$key];
+                    break;
+                }
+            }
+        }
+
         // Remove currency prefixes (3 letters) and extract numeric part
         if (preg_match('/^[A-Z]{3}(\d+)$/', $code, $matches)) {
             return $matches[1];
@@ -663,6 +703,14 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
      */
     protected function get_posted_data($field_name)
     {
+
+        // Use the get_post_data method to retrieve posted data
+        $post_data = $this->get_post_data();
+        if (isset($post_data[$field_name])) {
+            return wc_clean(wp_unslash($post_data[$field_name]));
+        }
+
+        // Fallback to $_POST if not found in post_data
         return isset($_POST[$field_name]) ? wc_clean(wp_unslash($_POST[$field_name])) : '';
     }
 
@@ -820,9 +868,25 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
      */
     protected function redact_sensitive_data($array)
     {
-        $forbidden = ['Authorization', 'password', 'merchantid', 'api_key', 'secret_key', 'card', 'cardholder', 'authcode', 'trackid', 'token'];
+        // Currently, this method only redacts specific keys.
+        if (!is_array($array)) {
+            return $array; // If not an array, return as is
+        }
 
-        foreach ($forbidden as $key) {
+        $forbidden_keys = [
+            'Authorization',
+            'password',
+            'merchantid',
+            'api_key',
+            'secret_key',
+            'card',
+            'cardholder',
+            'authcode',
+            'trackid',
+            'token'
+        ];
+
+        foreach ($forbidden_keys as $key) {
             if (isset($array[$key])) {
                 $array[$key] = '[REDACTED]';
             }
@@ -834,10 +898,19 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
     /**
      * Log messages to a custom log file.
      *
-     * @param string $message The message to log.
+     * @param string|array $message The message to log.
+     * @param bool   $redact  Whether to redact sensitive information.
      */
-    protected function log_to_file($message)
+    protected function log_to_file($message, $redact_sensitive = true)
     {
+        if ($redact_sensitive) {
+            $message = $this->redact_sensitive_data($message);
+        }
+
+        if (is_array($message)) {
+            $message = print_r($message, true);
+        }
+
         error_log('[' . date('Y-m-d H:i:s') . ' Key2Pay] [' . $this->id . '] ' . $message . PHP_EOL, 3, $this->custom_log_file);
     }
 }

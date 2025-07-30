@@ -169,7 +169,7 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
                 $this->log_to_file(sprintf('Key2Pay redirect API Request Failed for order #%s: %s', $order_id, $error_message));
             }
             return array(
-                'result'   => 'fail',
+                'result'   => 'failure',
                 'redirect' => '',
             );
         }
@@ -202,7 +202,7 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
 
                 return array(
                     'result'   => 'success',
-                    'redirect' => $data->redirectUrl,
+                    'redirect' => esc_url_raw($data->redirectUrl),
                 );
             } else {
                 // Valid response but no redirect URL, which is unexpected.
@@ -212,7 +212,7 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
                     $this->log_to_file(sprintf('Key2Pay redirect Missing Redirect URL for order #%s: %s', $order_id, $error_message));
                 }
                 return array(
-                    'result'   => 'fail',
+                    'result'   => 'failure',
                     'redirect' => '',
                 );
             }
@@ -224,7 +224,7 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
                 $this->log_to_file(sprintf('Key2Pay redirect API Error for order #%s: %s', $order_id, $error_message));
             }
             return array(
-                'result'   => 'fail',
+                'result'   => 'failure',
                 'redirect' => '',
             );
         }
