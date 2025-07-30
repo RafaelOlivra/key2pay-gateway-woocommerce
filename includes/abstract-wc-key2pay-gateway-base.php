@@ -882,7 +882,6 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
             'card',
             'cardholder',
             'authcode',
-            'trackid',
             'token'
         ];
 
