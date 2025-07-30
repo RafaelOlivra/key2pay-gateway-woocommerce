@@ -32,7 +32,7 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
     {
         // 1. Set specific properties for THIS gateway. These MUST be set BEFORE parent::__construct().
         $this->id                   = 'key2pay_credit';
-        $this->icon                 = KEY2PAY_PLUGIN_URL . 'assets/images/key2pay-admin.webp';
+        $this->icon                 = KEY2PAY_PLUGIN_URL . 'assets/images/key2pay.png';
         $this->has_fields           = false; // No fields on checkout for this gateway
         $this->method_title         = __('Key2Pay Credit Card', 'key2pay');
         $this->method_description   = __('Pay with credit card via Key2Pay with maximum security.', 'key2pay');
