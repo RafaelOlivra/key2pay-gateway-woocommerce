@@ -1,7 +1,8 @@
-const { registerPaymentMethod } = window.wc.wcBlocksRegistry;
 import { __ } from "@wordpress/i18n";
-import { useState } from "@wordpress/element";
-import { useEffect } from "@wordpress/element";
+import { useState, useEffect } from "@wordpress/element";
+import { select } from "@wordpress/data";
+
+const { registerPaymentMethod } = window.wc.wcBlocksRegistry;
 
 /**
  * @see https://github.com/woocommerce/woocommerce/blob/trunk/plugins/woocommerce/client/blocks/docs/internal-developers/block-client-apis/checkout/checkout-api.md
@@ -15,6 +16,7 @@ const ThaiDebitFieldsContent = (props) => {
     const { eventRegistration, emitResponse, components } = props;
     const { PaymentMethodLabel } = components;
     const { onPaymentSetup } = eventRegistration;
+    const store = select(window.wc.wcBlocksData.CART_STORE_KEY);
 
     // State to store input values
     const [accountNo, setAccountNo] = useState("");
@@ -54,7 +56,21 @@ const ThaiDebitFieldsContent = (props) => {
     useEffect(() => {
         const unsubscribe = onPaymentSetup(async () => {
             const isValid = accountNo && accountName && bankCode;
+            const cartTotals = store.getCartTotals();
+            const hasMinimumAmount = cartTotals.total >= 100;
 
+            // Check if the total amount is sufficient for Thai QR Debit
+            if (!hasMinimumAmount) {
+                return {
+                    type: emitResponse.responseTypes.ERROR,
+                    message: __(
+                        "Thai QR Debit is only available for orders of 100 THB or more.",
+                        "key2pay"
+                    ),
+                };
+            }
+
+            // Check if the required fields are filled and the total amount is sufficient
             if (isValid) {
                 return {
                     type: emitResponse.responseTypes.SUCCESS,
