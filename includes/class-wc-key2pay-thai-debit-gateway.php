@@ -77,7 +77,7 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         woocommerce_form_field('payer_bank_code', [
             'type'        => 'text', // Can be select if you have a list of banks
             'label'       => __('Bank Code', 'key2pay'),
-            'placeholder' => __('e.g., 014', 'key2pay'),
+            'placeholder' => __('e.g. KBANK', 'key2pay'),
             'required'    => true,
             'default'     => '',
         ], $this->get_posted_data('payer_bank_code'));

@@ -1,10 +1,13 @@
 /* Key2Pay Payment Gateway Styles */
 
 
-/* Payment gateway icon sizing */
-
-
 /* Frontend (checkout) styling */
+
+.k2p-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
 
 div#key2pay_credit *>img.woocommerce-list__item-image {
     object-fit: cover;
@@ -97,5 +100,10 @@ div#key2pay_credit *>img.woocommerce-list__item-image {
 @media (max-width: 768px) {
     .wc-key2pay-payment-form {
         padding: 10px;
+    }
+
+    .k2p-grid-3 {
+        grid-template-columns: repeat(1, 1fr);
+        gap: 0;
     }
 }

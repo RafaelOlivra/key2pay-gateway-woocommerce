@@ -16,7 +16,22 @@ const ThaiDebitFieldsContent = (props) => {
     const { eventRegistration, emitResponse, components } = props;
     const { PaymentMethodLabel } = components;
     const { onPaymentSetup } = eventRegistration;
+    const { getPaymentMethodData } = window.wc.wcSettings;
+    const iconUrl = window.key2pay.assetsUrl + "images/key2pay.png";
     const store = select(window.wc.wcBlocksData.CART_STORE_KEY);
+
+    console.log(props);
+
+    // Get payment labels
+    const { title, description } = getPaymentMethodData(
+        "key2pay_thai_debit"
+    ) || {
+        title: __("Key2Pay Thai QR Debit (QR Payment)", "key2pay"),
+        description: __(
+            "Pay using Thai QR Debit payments via Key2Pay.",
+            "key2pay"
+        ),
+    };
 
     // State to store input values
     const [accountNo, setAccountNo] = useState("");
@@ -109,55 +124,66 @@ const ThaiDebitFieldsContent = (props) => {
     return (
         <div className='k2p-thai-debit'>
             <PaymentMethodLabel
-                text={__(
-                    "Pay using Thai QR Debit payments via Key2Pay. Please enter your bank details below.",
-                    "key2pay"
-                )}
+                text={description}
+                icon={<img src={iconUrl} alt={title} width={35} />}
             />
-            <div className='k2p-field-group'>
-                <p>
-                    <label>
-                        {__("Bank Code", "key2pay")}
-                        <input
-                            type='text'
-                            placeholder={__("e.g., 014", "key2pay")}
-                            name='payer_bank_code'
-                            value={bankCode}
-                            onChange={(e) => setBankCode(e.target.value)} // Update state on change
-                            required
-                        />
-                    </label>
-                </p>
-            </div>
-            <div className='k2p-field-group'>
-                <p>
-                    <label>
-                        {__("Bank Account Number", "key2pay")}
-                        <input
-                            type='text'
-                            placeholder={__("Enter account number", "key2pay")}
-                            name='payer_account_no'
-                            value={accountNo}
-                            onChange={(e) => setAccountNo(e.target.value)} // Update state on change
-                            required
-                        />
-                    </label>
-                </p>
-            </div>
-            <div className='k2p-field-group'>
-                <p>
-                    <label>
-                        {__("Bank Account Name", "key2pay")}
-                        <input
-                            type='text'
-                            placeholder={__("Name on account", "key2pay")}
-                            name='payer_account_name'
-                            value={accountName}
-                            onChange={(e) => setAccountName(e.target.value)} // Update state on change
-                            required
-                        />
-                    </label>
-                </p>
+            <p>
+                {__("You will be redirected to the payment page.", "key2pay") +
+                    " " +
+                    __("Please fill in the details below:", "key2pay")}
+            </p>
+            <div className='k2p-grid-3'>
+                <div className='k2p-field-group'>
+                    <p>
+                        <label>
+                            {__("Bank Code", "key2pay")}
+                            <input
+                                type='text'
+                                placeholder={__("e.g. KBANK", "key2pay")}
+                                name='payer_bank_code'
+                                value={bankCode}
+                                onChange={(e) => setBankCode(e.target.value)} // Update state on change
+                                required
+                            />
+                        </label>
+                    </p>
+                </div>
+                <div className='k2p-field-group'>
+                    <p>
+                        <label>
+                            {__("Bank Account Number", "key2pay")}
+                            <input
+                                type='text'
+                                placeholder={__(
+                                    "Enter your debit account number",
+                                    "key2pay"
+                                )}
+                                name='payer_account_no'
+                                value={accountNo}
+                                onChange={(e) => setAccountNo(e.target.value)} // Update state on change
+                                required
+                            />
+                        </label>
+                    </p>
+                </div>
+                <div className='k2p-field-group'>
+                    <p>
+                        <label>
+                            {__("Bank Account Name", "key2pay")}
+                            <input
+                                type='text'
+                                placeholder={__(
+                                    "Name on your debit account",
+                                    "key2pay"
+                                )}
+                                name='payer_account_name'
+                                value={accountName}
+                                onChange={(e) => setAccountName(e.target.value)} // Update state on change
+                                required
+                            />
+                        </label>
+                    </p>
+                </div>
             </div>
         </div>
     );
@@ -184,15 +210,25 @@ const ThaiCreditFieldsContent = (props) => {
     const { eventRegistration, emitResponse, components } = props;
     const { PaymentMethodLabel } = components;
     const { onPaymentSetup } = eventRegistration;
+    const { getPaymentMethodData } = window.wc.wcSettings;
+    const iconUrl = window.key2pay.assetsUrl + "images/key2pay.png";
+    const store = select(window.wc.wcBlocksData.CART_STORE_KEY);
+
+    // Get payment labels
+    const { title, description } = getPaymentMethodData("key2pay_credit") || {
+        title: __("Key2Pay Credit Card", "key2pay"),
+        description: __("Pay using Credit Card via Key2Pay.", "key2pay"),
+    };
 
     return (
         <div className='k2p-credit-card'>
             <PaymentMethodLabel
-                text={__(
-                    "Pay using Credit Card via Key2Pay. You will be redirected to complete your payment securely.",
-                    "key2pay"
-                )}
+                text={description}
+                icon={<img src={iconUrl} alt={title} width={35} />}
             />
+            <p>
+                {__("You will be redirected to the payment page.", "key2pay")}
+            </p>
         </div>
     );
 };
