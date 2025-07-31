@@ -4,13 +4,13 @@
  * Plugin Name: WooCommerce Key2Pay Gateway [AXDS]
  * Plugin URI:  https://axons.com/
  * Description: A secure redirect-based WooCommerce payment gateway for Key2Pay.
- * Version:     1.0.2
+ * Version:     1.5.0
  * Author:      Axons
  * Author URI:  https://axons.com/
  * Text Domain: key2pay
  * Domain Path: /languages
- * WC requires at least: 8.0
- * WC tested up to: 8.0
+ * WC requires at least: 8.1
+ * WC tested up to: 8.1
  * WC HPOS compatible: yes
  */
 

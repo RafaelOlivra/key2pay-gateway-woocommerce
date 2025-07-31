@@ -83,29 +83,22 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
     {
         $order = wc_get_order($order_id);
 
-        $this->debug_log(sprintf('Processing redirect payment for order #%s.', $order_id));
-
+        
         // Prepare data for Key2Pay Credit Card API request.
         $endpoint     = $this->build_api_url('/PaymentToken/Create');
         $request_data = $this->prepare_common_request_data($order);
-
+        
         // Get authentication headers (e.g., API Key, Bearer Token)
         $headers = ['Content-Type' => 'application/json'];
         $headers = array_merge($headers, $this->auth_handler->get_auth_headers());
-
+        
         // Log the complete request data before sending
+        $this->debug_log(sprintf('Processing redirect payment for order #%s.', $order_id));
         $this->debug_log('Key2Pay API Request: Preparing to send payment request for order #' . $order_id);
         $this->debug_log('Key2Pay API Request: API URL: ' . $endpoint);
-
-        // Redact sensitive data in headers for logging
-        $safe_headers = $this->redact_sensitive_data($headers);
-        $this->debug_log('Key2Pay API Request: Headers: ' . print_r($safe_headers, true));
-
-        // Redact sensitive data in request data for logging
-        $safe_request_data = $this->redact_sensitive_data($request_data);
-        $this->debug_log('Key2Pay API Request: Request Data: ' . print_r($safe_request_data, true));
+        $this->debug_log('Key2Pay API Request: Headers: ' . print_r($this->redact_sensitive_data($headers), true));
+        $this->debug_log('Key2Pay API Request: Request Data: ' . print_r($this->redact_sensitive_data($request_data), true));
         $this->debug_log('Key2Pay API Request: Webhook URL being sent: ' . $request_data['serverUrl']);
-        $this->debug_log('Key2Pay API Request: JSON payload length: ' . strlen(json_encode($request_data)) . ' characters');
 
         // Make the API call to Key2Pay Credit Card endpoint.
         $response = wp_remote_post(
