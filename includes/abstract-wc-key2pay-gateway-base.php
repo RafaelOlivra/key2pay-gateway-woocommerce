@@ -114,7 +114,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
             ]);
             $this->auth_handler->set_debug($this->debug);
         } catch (Exception $e) {
-            $this->log->error('Key2Pay Error: Failed to initialize auth handler: ' . $e->getMessage(), ['source' => $this->id]);
+            $this->debug_log('Key2Pay Error: Failed to initialize auth handler: ' . $e->getMessage());
         }
 
         return $this->auth_handler;
@@ -235,6 +235,52 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
     }
 
     /**
+     * Prepare common order data for Key2Pay payment request.
+     * This method is used by all Key2Pay gateways to prepare the order data
+     * that will be sent to Key2Pay for processing.
+     *
+     * @param WC_Order $order The WooCommerce order object.
+     * @return array An array of order data to be sent to Key2Pay.
+     */
+    public function prepare_common_request_data($order)
+    {
+
+        // Ensure the order is a valid WC_Order object
+        if (! $order instanceof WC_Order) {
+            throw new Exception('Invalid order object provided to prepare_common_request_data.');
+        }
+
+        // Prepare common order data for Key2Pay payment request.
+        $amount      = (float) $order->get_total();
+        $currency    = $order->get_currency();
+        $customer_ip = WC_Geolocation::get_ip_address();
+        $return_url  = $this->get_return_url($order);
+        $server_url  = home_url('/wc-api/' . strtolower($this->id));
+
+        $order_data = [
+            'payment_method'       => ['type' => self::PAYMENT_METHOD_TYPE],
+            'trackid'              => $order->get_id() . '_' . time(),
+            'bill_currencycode'    => $currency,
+            'bill_amount'          => $amount,
+            'bill_country'         => $order->get_billing_country() ?: '',
+            'bill_customerip'      => $customer_ip,
+            'bill_email'           => $order->get_billing_email(),
+            'returnUrl'            => $return_url,
+            'serverUrl'            => $server_url,
+            'productdesc'          => sprintf(__('Order %s from %s', 'key2pay'), $order->get_order_number(), get_bloginfo('name')),
+            'returnUrl_on_failure' => add_query_arg('k2p-status', 'failed', $order->get_checkout_payment_url(false)),
+            'lang'                 => self::DEFAULT_LANGUAGE,
+            'bill_phone'           => $order->get_billing_phone() ?: '',
+            'bill_city'            => $order->get_billing_city() ?: '',
+            'bill_state'           => $order->get_billing_state() ?: '',
+            'bill_address'         => $order->get_billing_address_1() ?: '',
+            'bill_zip'             => $order->get_billing_postcode(),
+        ];
+
+        return $order_data;
+    }
+
+    /**
      * Process the payment. Abstract as implementation differs per gateway type.
      *
      * @param int $order_id Order ID.
@@ -246,6 +292,337 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
         // It will handle the actual payment processing logic.
         // For now, we throw an exception to enforce implementation.
         throw new Exception('process_payment() must be implemented by child classes.');
+    }
+
+    /**
+     * Process a refund.
+     * This method is abstract as it might involve different APIs or parameters
+     * depending on the payment method type, although often it's a common refund API.
+     * For now, we'll delegate it to a potential 'main' gateway or make it concrete if common.
+     * @see https://key2pay.readme.io/reference/refund
+     *
+     * @param int    $order_id Order ID.
+     * @param float  $amount Refund amount.
+     * @param string $reason Refund reason.
+     * @return bool True if refund was successful, false otherwise.
+     */
+    public function process_refund($order_id, $amount = null, $reason = '')
+    {
+        // Retrieve transaction ID from order meta
+        $order          = wc_get_order($order_id);
+        $transaction_id = $order->get_meta('_key2pay_transaction_id');
+        $amount         = (float) $order->get_total();
+        $currency       = $order->get_currency();
+        $email          = $order->get_billing_email();
+        $endpoint       = $this->build_api_url('/transaction/refund');
+
+        if (empty($transaction_id)) {
+            $this->debug_log('Key2Pay refund: No transaction ID found for order #' . $order_id);
+            return false;
+        }
+
+        // Prepare refund data
+        $refund_data = [
+            'transactionid'     => $transaction_id,
+            'tranid'            => $transaction_id,
+            'trackid'           => $email, // Using email as track ID for refund
+            'bill_amount'       => $amount,
+            'bill_currencycode' => $currency,
+            'reason'            => $reason,
+        ];
+        $refund_data = $this->auth_handler->add_auth_to_body($refund_data);
+
+        $headers = ['Content-Type' => 'application/json'];
+        $headers = array_merge($headers, $this->auth_handler->get_auth_headers());
+
+        $this->debug_log('Key2Pay refund Request: Preparing to send refund for order #' . $order_id);
+        $this->debug_log('Key2Pay refund Request: API URL: ' . $endpoint);
+
+        $response = wp_remote_post(
+            $endpoint,
+            [
+                'method'    => 'POST',
+                'headers'   => $headers,
+                'body'      => json_encode($refund_data),
+                'timeout'   => 60,
+                'sslverify' => true,
+            ]
+        );
+
+        if (is_wp_error($response)) {
+            $error_message = $response->get_error_message();
+            $this->debug_log(sprintf('Key2Pay refund API Request Failed for order #%s: %s', $order_id, $error_message));
+            return false;
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body);
+
+        $this->debug_log(sprintf('Key2Pay refund API Response for order #%s: %s', $order_id, print_r($data, true)));
+
+        // Key2Pay refund specific success/failure logic
+        // Note: Documentation is not provided yet, so this is based on common patterns.
+        // @see https://key2pay.readme.io/reference/refund
+        if (isset($data->type) && 'valid' === $data->type && isset($data->result) && ($data->result === 'CAPTURED' || $data->result === 'Success' || $data->responsecode == self::CODE_APPROVED)) {
+            $order->add_order_note(sprintf(__('Key2Pay refund successful. Amount: %s. Reason: %s. Transaction ID: %s', 'key2pay'), wc_price($amount), $reason, $transaction_id));
+            $this->debug_log('Key2Pay refund: Order #' . $order_id . ' refund successful.');
+            return true;
+        } else {
+            $error_message = isset($data->error_text) ? $data->error_text : __('An unknown error occurred during Key2Pay refund.', 'key2pay');
+            $order->add_order_note(sprintf(__('Key2Pay refund failed. Amount: %s. Reason: %s. Error: %s', 'key2pay'), wc_price($amount), $reason, $error_message));
+            $this->debug_log(sprintf('Key2Pay refund Failed for order #%s: %s', $order_id, $error_message));
+            return false;
+        }
+    }
+
+    /**
+     * Handle webhook callbacks from Key2Pay.
+     * This processes payment status updates from Key2Pay for payments.
+     *
+     * Security: This is the ONLY way payment status is updated.
+     * URL parameters are completely ignored for maximum security.
+     *
+     * Webhook format per Key2Pay documentation:
+     * {
+     *   "type": "valid",
+     *   "result": "Processing",
+     *   "responsecode": "9",
+     *   "trackid": "123455",
+     *   "merchantid": "TEST001",
+     *   "redirectUrl": "https://api.key2payment.com/transaction/Redirect?ID=...",
+     *   "token": "1d85ca154e754b4596128b00a5b21d1c",
+     *   "error_code_tag": null,
+     *   "error_text": null,
+     *   "transactionid": "1001547"
+     * }
+     */
+    public function handle_webhook_callback()
+    {
+        // Always log webhook attempts for debugging
+        $this->debug_log('Key2Pay Webhook: Attempt received for ' . $this->id);
+
+        // Log request method and headers for debugging
+        $this->debug_log('Key2Pay Webhook: Request Method: ' . $_SERVER['REQUEST_METHOD']);
+        $this->debug_log('Key2Pay Webhook: Request Headers: ' . print_r(getallheaders(), true));
+
+        // Get the raw POST data
+        $raw_data = file_get_contents('php://input');
+
+        // Log raw data length only (for debugging without exposing sensitive data)
+        $this->debug_log('Key2Pay Webhook: Raw data length: ' . strlen($raw_data) . ' characters');
+
+        // Parse the webhook data
+        $webhook_data = json_decode($raw_data, true);
+
+        if (! $webhook_data) {
+            $this->debug_log('Key2Pay Webhook: Failed to parse JSON data: ' . $raw_data);
+            wp_send_json_error(['message' => __('Invalid webhook data received.', 'key2pay')]);
+            exit();
+        }
+
+        // Log parsed data without sensitive information
+        $safe_webhook_data = $this->redact_sensitive_data($webhook_data);
+        $this->debug_log('Key2Pay Webhook: Parsed data: ' . print_r($safe_webhook_data, true));
+
+        // Extract order information per Key2Pay documentation
+        // @see https://key2pay.readme.io/reference/webhooks-copy
+        $type           = isset($webhook_data['type']) ? $webhook_data['type'] : '';
+        $result         = isset($webhook_data['result']) ? $webhook_data['result'] : '';
+        $response_code  = isset($webhook_data['responsecode']) ? $webhook_data['responsecode'] : '';
+        $track_id       = isset($webhook_data['trackid']) ? $webhook_data['trackid'] : '';
+        $transaction_id = isset($webhook_data['transactionid']) ? $webhook_data['transactionid'] : '';
+        $token          = isset($webhook_data['token']) ? $webhook_data['token'] : '';
+        $token          = ! empty($token) ? $token : (isset($webhook_data['udf4']) ? $webhook_data['udf4'] : ''); // Fallback to udf4 if token is not set
+        $error_text     = isset($webhook_data['error_text']) ? $webhook_data['error_text'] : '';
+
+        $this->debug_log('Key2Pay Webhook: Extracted fields - type: ' . $type . ', result: ' . $result . ', response_code: ' . $response_code . ', track_id: ' . $track_id . ', transaction_id: ' . $transaction_id);
+
+        // Always use response_code for processing, as it contains the actual gateway response code
+        $code_to_process = $response_code;
+        $this->debug_log('Key2Pay Webhook: Code to process: ' . $code_to_process);
+
+        // Find the order by track ID
+        $order = null;
+        if ($track_id) {
+            // Extract order ID from track_id (format: order_id_timestamp)
+            $parts = explode('_', $track_id);
+            if (count($parts) >= 2) {
+                $order_id = $parts[0];
+                $order    = wc_get_order($order_id);
+                $this->debug_log('Key2Pay Webhook: Extracted order_id: ' . $order_id . ' from track_id: ' . $track_id);
+            }
+        }
+
+        // Order not found or track_id is empty
+        if (! $order) {
+            $this->debug_log('Key2Pay Webhook: Order not found for track_id: ' . $track_id);
+            wp_send_json_error(['message' => __('Order not found for the provided track_id.', 'key2pay')]);
+            exit();
+        }
+
+        $this->debug_log('Key2Pay Webhook: Found order #' . $order->get_id() . ' - current status: ' . $order->get_status());
+
+        // [!] Make sure the token matches the order's token
+        // This is a security measure to ensure the webhook is for the correct order.
+        if ($token && $order->get_meta('_key2pay_token') !== $token) {
+            $this->debug_log('Key2Pay Webhook: Token mismatch for order #' . $order->get_id() . '. Expected: ' . $order->get_meta('_key2pay_token') . ', Received: ' . $token);
+            wp_send_json_error(['message' => __('Token mismatch for the provided order id. Please try again.', 'key2pay')]);
+            exit();
+        }
+
+        // Process the payment status based on Key2Pay gateway response codes
+        $this->process_payment_result($order, $code_to_process, $transaction_id, $error_text);
+
+        // Log final status
+        $this->debug_log('Key2Pay Webhook: Final order status: ' . $order->get_status());
+
+        // Always acknowledge the webhook
+        wp_send_json_success([
+            'message' => __('Webhook processed successfully.', 'key2pay'),
+        ]);
+        exit();
+    }
+
+    /**
+     * Fallback handler to process payment status from URL parameters
+     * when the webhook has failed or hasn’t run yet.
+     *
+     * This method parses those parameters and processes the payment result,
+     * but only if the order is still in a 'pending' state.
+     *
+     * @param WC_Order $order The WooCommerce order object.
+     */
+    protected function process_url_parameters_fallback($order)
+    {
+        $result               = ! empty($_GET['result']) ? sanitize_text_field($_GET['result']) : '';
+        $response_code        = ! empty($_GET['responsecode']) ? sanitize_text_field($_GET['responsecode']) : '';
+        $track_id             = ! empty($_GET['trackid']) ? sanitize_text_field($_GET['trackid']) : '';
+        $response_description = ! empty($_GET['responsedescription']) ? sanitize_text_field($_GET['responsedescription']) : '';
+
+        $this->debug_log('Key2Pay Fallback: Processing result=' . $result . ', response_code=' . $response_code . ', track_id=' . $track_id . ', description=' . $response_description);
+
+        // Only continue if the order is still pending (i.e., webhook hasn’t updated it yet)
+        if ($order->has_status('pending')) {
+            $status_code = $this->extract_status_code($response_code);
+
+            $this->debug_log('Key2Pay Fallback: Order #' . $order->get_id() . ' is pending, processing with code: ' . $status_code);
+
+            // Simulate the webhook behavior using the parsed values
+            $this->process_payment_result($order, $status_code, '', $response_description);
+
+            $this->debug_log('Key2Pay Fallback: Order #' . $order->get_id() . ' status updated to: ' . $order->get_status());
+
+            // Add a note to the order to indicate fallback processing was used
+            $order->add_order_note(sprintf(
+                __('Payment status processed via URL parameter fallback. [Code: %s], Description: %s', 'key2pay'),
+                $status_code,
+                $response_description
+            ));
+        } else {
+            $this->debug_log('Key2Pay Fallback: Order #' . $order->get_id() . ' already processed by webhook, skipping fallback processing.');
+        }
+    }
+
+    /**
+     * Process payment result based on Key2Pay gateway response codes.
+     * This method is common and can remain in the base class.
+     *
+     * @param WC_Order $order Order object.
+     * @param string   $result Payment result code.
+     * @param string   $transaction_id Transaction ID.
+     * @param string   $error_text Error text if any.
+     */
+    protected function process_payment_result($order, $result, $transaction_id, $error_text)
+    {
+        $status_code    = $this->extract_status_code($result);
+        $status_message = $this->get_status_code_message($status_code);
+
+        $this->debug_log('Key2Pay Gateway: Processing response code: ' . $status_code . ' for order #' . $order->get_id());
+
+        switch ($status_code) {
+            case self::CODE_APPROVED:
+                $order->payment_complete($transaction_id);
+                $order->add_order_note(sprintf(__('Key2Pay payment approved. Transaction ID: %s, [Code: %s] - %s', 'key2pay'), $transaction_id, $status_code, $status_message));
+                $this->debug_log('Key2Pay Payment: Order #' . $order->get_id() . ' marked as paid (Code: ' . $status_code . ')');
+                break;
+            case self::CODE_INSUFFICIENT_FUNDS:
+                $order->update_status('failed', sprintf(__('Key2Pay payment failed: %s. [Code: %s], Error: %s', 'key2pay'), $this->get_status_code_message($status_code), $status_code, $error_text));
+                $this->debug_log('Key2Pay Payment: Order #' . $order->get_id() . ' failed - insufficient funds (Code: ' . $status_code . ')');
+                break;
+            case self::CODE_DO_NOT_HONOUR:
+                $order->update_status('failed', sprintf(__('Key2Pay payment failed: %s. [Code: %s], Error: %s', 'key2pay'), $this->get_status_code_message($status_code), $status_code, $error_text));
+                $this->debug_log('Key2Pay Payment: Order #' . $order->get_id() . ' failed - do not honour (Code: ' . $status_code . ')');
+                break;
+            case self::CODE_RESTRICTED_CARD:
+                $order->update_status('failed', sprintf(__('Key2Pay payment failed: %s. [Code: %s], Error: %s', 'key2pay'), $this->get_status_code_message($status_code), $status_code, $error_text));
+                $this->debug_log('Key2Pay Payment: Order #' . $order->get_id() . ' failed - restricted card (Code: ' . $status_code . ')');
+                break;
+            case self::CODE_INVALID_TRANSACTION:
+                $order->update_status('failed', sprintf(__('Key2Pay payment failed: %s. [Code: %s], Error: %s', 'key2pay'), $this->get_status_code_message($status_code), $status_code, $error_text));
+                $this->debug_log('Key2Pay Payment: Order #' . $order->get_id() . ' failed - invalid transaction (Code: ' . $status_code . ')');
+                break;
+            case self::CODE_TIMEOUT:
+                $order->update_status('failed', sprintf(__('Key2Pay payment failed: %s. [Code: %s], Error: %s', 'key2pay'), $this->get_status_code_message($status_code), $status_code, $error_text));
+                $this->debug_log('Key2Pay Payment: Order #' . $order->get_id() . ' failed - timeout (Code: ' . $status_code . ')');
+                break;
+            case self::CODE_DEBIT_PENDING:
+                // Thai QR Debit initial processing, treat as pending
+                $order->update_status('pending', sprintf(__('Key2Pay payment is processing. Transaction ID: %s, [Code: %s] - %s', 'key2pay'), $transaction_id, $status_code, $status_message));
+                $this->debug_log('Key2Pay Payment: Order #' . $order->get_id() . ' marked as pending (Processing)', ['source' => $this->id]);
+                break;
+            case self::CODE_DEBIT_FAILED:
+                // Thai QR Debit failed, treat as failed
+                $order->update_status('failed', sprintf(__('Key2Pay payment failed: %s. [Code: %s], Error: %s', 'key2pay'), $this->get_status_code_message($status_code), $status_code, $error_text));
+                $this->debug_log('Key2Pay Payment: Order #' . $order->get_id() . ' failed', ['source' => $this->id]);
+                break;
+            case self::CODE_CAPTURED:
+                $order->payment_complete($transaction_id);
+                $order->add_order_note(sprintf(__('Key2Pay payment completed successfully. Transaction ID: %s, [Code: %s] - %s', 'key2pay'), $transaction_id, $status_code, $status_message));
+                $this->debug_log('Key2Pay Payment: Order #' . $order->get_id() . ' marked as paid (CAPTURED)', ['source' => $this->id]);
+                break;
+            default:
+                // Any other code not in the list, treat as pending or failed based on documentation.
+                // Current interpretation treats others as approved, which might need fine-tuning with Key2Pay docs.
+                // For now, keeping consistent with previous logic.
+                $order->payment_complete($transaction_id);
+                $order->add_order_note(sprintf(__('Key2Pay payment processed with unknown response code. Transaction ID: %s, [Code: %s] - %s', 'key2pay'), $transaction_id, $status_code, $status_message));
+                $this->debug_log('Key2Pay Payment: Order #' . $order->get_id() . ' marked as paid (unknown code: ' . $status_code . ')', ['source' => $this->id]);
+                break;
+        }
+    }
+
+    /**
+     * Get descriptive error message for a specific status code.
+     *
+     * @param string $code The response code.
+     * @return string The descriptive error message.
+     */
+    protected function get_status_code_message($code)
+    {
+        $code = $this->extract_status_code($code);
+
+        switch ($code) {
+            case self::CODE_INVALID_CREDENTIALS:
+                return __('Payment failed: Invalid credentials. Please check your merchant ID and password.', 'key2pay');
+            case self::CODE_APPROVED:
+                return __('Payment approved successfully.', 'key2pay');
+            case self::CODE_INSUFFICIENT_FUNDS:
+                return __('Payment failed: Insufficient funds in the account.', 'key2pay');
+            case self::CODE_DO_NOT_HONOUR:
+                return __('Payment failed: Do not honour. The transaction was declined by the bank.', 'key2pay');
+            case self::CODE_RESTRICTED_CARD:
+                return __('Payment failed: Restricted card. This card cannot be used for this transaction.', 'key2pay');
+            case self::CODE_INVALID_TRANSACTION:
+                return __('Payment failed: Invalid transaction. The transaction details are not valid.', 'key2pay');
+            case self::CODE_TIMEOUT:
+                return __('Payment failed: Transaction timeout. The request took too long to process.', 'key2pay');
+            case self::CODE_DEBIT_PENDING:
+                return __('Payment processing: Awaiting confirmation.', 'key2pay');
+            case self::CODE_DEBIT_FAILED:
+                return __('Payment failed: The transaction was not completed.', 'key2pay');
+            default:
+                return __('Payment processed with unknown response code.', 'key2pay');
+        }
     }
 
     /**
@@ -292,7 +669,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
         // Check if we have URL parameters from the Key2Pay Credit Card
         // Since fallback is enabled, we process them and redirect to clean URL.
         if (isset($_GET['result']) || isset($_GET['responsecode']) || isset($_GET['trackid'])) {
-            $this->log_to_file('Key2Pay Gateway: URL parameters detected - Processing as fallback for order #' . $order_id);
+            $this->debug_log('Key2Pay Gateway: URL parameters detected - Processing as fallback for order #' . $order_id);
             $this->process_url_parameters_fallback($order);
 
             // Redirect to clean URL after processing to remove parameters
@@ -310,295 +687,6 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
             echo wpautop(wp_kses_post($this->get_user_friendly_error_message_for_failed_order($order)));
         } else {
             echo wpautop(wp_kses_post(__('Thank you for your order. We will process your payment shortly.', 'key2pay')));
-        }
-    }
-
-    /**
-     * Fallback handler to process payment status from URL parameters
-     * when the webhook has failed or hasn’t run yet.
-     *
-     * This method parses those parameters and processes the payment result,
-     * but only if the order is still in a 'pending' state.
-     *
-     * @param WC_Order $order The WooCommerce order object.
-     */
-    protected function process_url_parameters_fallback($order)
-    {
-        $result               = ! empty($_GET['result']) ? sanitize_text_field($_GET['result']) : '';
-        $response_code        = ! empty($_GET['responsecode']) ? sanitize_text_field($_GET['responsecode']) : '';
-        $track_id             = ! empty($_GET['trackid']) ? sanitize_text_field($_GET['trackid']) : '';
-        $response_description = ! empty($_GET['responsedescription']) ? sanitize_text_field($_GET['responsedescription']) : '';
-
-        $this->log_to_file('Key2Pay Fallback: Processing result=' . $result . ', response_code=' . $response_code . ', track_id=' . $track_id . ', description=' . $response_description);
-
-        // Only continue if the order is still pending (i.e., webhook hasn’t updated it yet)
-        if ($order->has_status('pending')) {
-            $status_code = $this->extract_status_code($response_code);
-
-            $this->log_to_file('Key2Pay Fallback: Order #' . $order->get_id() . ' is pending, processing with code: ' . $status_code);
-
-            // Simulate the webhook behavior using the parsed values
-            $this->process_payment_result($order, $status_code, '', $response_description);
-
-            $this->log_to_file('Key2Pay Fallback: Order #' . $order->get_id() . ' status updated to: ' . $order->get_status());
-
-            // Add a note to the order to indicate fallback processing was used
-            $order->add_order_note(sprintf(
-                __('Payment status processed via URL parameter fallback. [Code: %s], Description: %s', 'key2pay'),
-                $status_code,
-                $response_description
-            ));
-        } else {
-            $this->log_to_file('Key2Pay Fallback: Order #' . $order->get_id() . ' already processed by webhook, skipping fallback processing.');
-        }
-    }
-
-    /**
-     * Handle webhook callbacks from Key2Pay.
-     * This processes payment status updates from Key2Pay for payments.
-     *
-     * Security: This is the ONLY way payment status is updated.
-     * URL parameters are completely ignored for maximum security.
-     *
-     * Webhook format per Key2Pay documentation:
-     * {
-     *   "type": "valid",
-     *   "result": "Processing",
-     *   "responsecode": "9",
-     *   "trackid": "123455",
-     *   "merchantid": "TEST001",
-     *   "redirectUrl": "https://api.key2payment.com/transaction/Redirect?ID=...",
-     *   "token": "1d85ca154e754b4596128b00a5b21d1c",
-     *   "error_code_tag": null,
-     *   "error_text": null,
-     *   "transactionid": "1001547"
-     * }
-     */
-    public function handle_webhook_callback()
-    {
-        // Always log webhook attempts for debugging
-        $this->log_to_file('Key2Pay Webhook: Attempt received for ' . $this->id);
-
-        // Log request method and headers for debugging
-        $this->log_to_file('Key2Pay Webhook: Request Method: ' . $_SERVER['REQUEST_METHOD']);
-        $this->log_to_file('Key2Pay Webhook: Request Headers: ' . print_r(getallheaders(), true));
-
-        // Get the raw POST data
-        $raw_data = file_get_contents('php://input');
-
-        // Log raw data length only (for debugging without exposing sensitive data)
-        $this->log_to_file('Key2Pay Webhook: Raw data length: ' . strlen($raw_data) . ' characters');
-
-        // Parse the webhook data
-        $webhook_data = json_decode($raw_data, true);
-
-        if (! $webhook_data) {
-            $this->log_to_file('Key2Pay Webhook: Failed to parse JSON data: ' . $raw_data);
-            if ($this->debug) {
-                $this->log->error('Key2Pay Webhook: Failed to parse webhook data', ['source' => $this->id]);
-            }
-            wp_send_json_error(['message' => __('Invalid webhook data received.', 'key2pay')]);
-            exit();
-        }
-
-        // Log parsed data without sensitive information
-        $safe_webhook_data = $this->redact_sensitive_data($webhook_data);
-        $this->log_to_file('Key2Pay Webhook: Parsed data: ' . print_r($safe_webhook_data, true));
-
-        if ($this->debug) {
-            $this->log->debug('Key2Pay Webhook: Received payment data: ' . print_r($webhook_data, true), ['source' => $this->id]);
-        }
-
-        // Extract order information per Key2Pay documentation
-        // @see https://key2pay.readme.io/reference/webhooks-copy
-        $type           = isset($webhook_data['type']) ? $webhook_data['type'] : '';
-        $result         = isset($webhook_data['result']) ? $webhook_data['result'] : '';
-        $response_code  = isset($webhook_data['responsecode']) ? $webhook_data['responsecode'] : '';
-        $track_id       = isset($webhook_data['trackid']) ? $webhook_data['trackid'] : '';
-        $merchant_id    = isset($webhook_data['merchantid']) ? $webhook_data['merchantid'] : '';
-        $transaction_id = isset($webhook_data['transactionid']) ? $webhook_data['transactionid'] : '';
-        $token          = isset($webhook_data['token']) ? $webhook_data['token'] : '';
-        $token          = ! empty($token) ? $token : (isset($webhook_data['udf4']) ? $webhook_data['udf4'] : ''); // Fallback to udf4 if token is not set
-        $error_text     = isset($webhook_data['error_text']) ? $webhook_data['error_text'] : '';
-
-        $this->log_to_file('Key2Pay Webhook: Extracted fields - type: ' . $type . ', result: ' . $result . ', response_code: ' . $response_code . ', track_id: ' . $track_id . ', merchant_id: ' . $merchant_id . ', transaction_id: ' . $transaction_id);
-
-        // Always use response_code for processing, as it contains the actual gateway response code
-        $code_to_process = $response_code;
-        $this->log_to_file('Key2Pay Webhook: Code to process: ' . $code_to_process);
-
-        // Find the order by track ID
-        $order = null;
-        if ($track_id) {
-            // Extract order ID from track_id (format: order_id_timestamp)
-            $parts = explode('_', $track_id);
-            if (count($parts) >= 2) {
-                $order_id = $parts[0];
-                $order    = wc_get_order($order_id);
-                $this->log_to_file('Key2Pay Webhook: Extracted order_id: ' . $order_id . ' from track_id: ' . $track_id);
-            }
-        }
-
-        // Order not found or track_id is empty
-        if (! $order) {
-            $this->log_to_file('Key2Pay Webhook: Order not found for track_id: ' . $track_id);
-            if ($this->debug) {
-                $this->log->error('Key2Pay Webhook: Order not found for track_id: ' . $track_id, ['source' => $this->id]);
-            }
-            wp_send_json_error(['message' => __('Order not found for track_id: ' . $track_id, 'key2pay')]);
-            exit();
-        }
-
-        $this->log_to_file('Key2Pay Webhook: Found order #' . $order->get_id() . ' - current status: ' . $order->get_status());
-        if ($this->debug) {
-            $this->log->debug('Key2Pay Webhook: Processing payment for order #' . $order->get_id(), ['source' => $this->id]);
-        }
-
-        // [!] Make sure the token matches the order's token
-        // This is a security measure to ensure the webhook is for the correct order.
-        if ($token && $order->get_meta('_key2pay_token') !== $token) {
-            $this->log_to_file('Key2Pay Webhook: Token mismatch for order #' . $order->get_id() . '. Expected: ' . $order->get_meta('_key2pay_token') . ', Received: ' . $token);
-            if ($this->debug) {
-                $this->log->error('Key2Pay Webhook: Token mismatch for order #' . $order->get_id() . '. Expected: ' . $order->get_meta('_key2pay_token') . ', Received: ' . $token, ['source' => $this->id]);
-            }
-            wp_send_json_error(['message' => __('Token mismatch for order #' . $order->get_id() . '. Please try again.', 'key2pay')]);
-            exit();
-        }
-
-        // Process the payment status based on Key2Pay gateway response codes
-        $this->process_payment_result($order, $code_to_process, $transaction_id, $error_text);
-
-        // Log final status
-        $this->log_to_file('Key2Pay Webhook: Final order status: ' . $order->get_status());
-
-        // Always acknowledge the webhook
-        wp_send_json_success([
-            'message' => __('Webhook processed successfully.', 'key2pay'),
-        ]);
-        exit();
-    }
-
-    /**
-     * Process payment result based on Key2Pay gateway response codes.
-     * This method is common and can remain in the base class.
-     *
-     * @param WC_Order $order Order object.
-     * @param string   $result Payment result code.
-     * @param string   $transaction_id Transaction ID.
-     * @param string   $error_text Error text if any.
-     */
-    protected function process_payment_result($order, $result, $transaction_id, $error_text)
-    {
-        $status_code    = $this->extract_status_code($result);
-        $status_message = $this->get_status_code_message($status_code);
-
-        if ($this->debug) {
-            $this->log->debug('Key2Pay Gateway: Processing response code: ' . $status_code . ' for order #' . $order->get_id(), ['source' => $this->id]);
-        }
-
-        switch ($status_code) {
-            case self::CODE_APPROVED:
-                $order->payment_complete($transaction_id);
-                $order->add_order_note(sprintf(__('Key2Pay payment approved. Transaction ID: %s, [Code: %s] - %s', 'key2pay'), $transaction_id, $status_code, $status_message));
-                if ($this->debug) {
-                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' marked as paid (Code: ' . $status_code . ')', ['source' => $this->id]);
-                }
-                break;
-            case self::CODE_INSUFFICIENT_FUNDS:
-                $order->update_status('failed', sprintf(__('Key2Pay payment failed: %s. [Code: %s], Error: %s', 'key2pay'), $this->get_status_code_message($status_code), $status_code, $error_text));
-                if ($this->debug) {
-                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' failed - insufficient funds (Code: ' . $status_code . ')', ['source' => $this->id]);
-                }
-                break;
-            case self::CODE_DO_NOT_HONOUR:
-                $order->update_status('failed', sprintf(__('Key2Pay payment failed: %s. [Code: %s], Error: %s', 'key2pay'), $this->get_status_code_message($status_code), $status_code, $error_text));
-                if ($this->debug) {
-                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' failed - do not honour (Code: ' . $status_code . ')', ['source' => $this->id]);
-                }
-                break;
-            case self::CODE_RESTRICTED_CARD:
-                $order->update_status('failed', sprintf(__('Key2Pay payment failed: %s. [Code: %s], Error: %s', 'key2pay'), $this->get_status_code_message($status_code), $status_code, $error_text));
-                if ($this->debug) {
-                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' failed - restricted card (Code: ' . $status_code . ')', ['source' => $this->id]);
-                }
-                break;
-            case self::CODE_INVALID_TRANSACTION:
-                $order->update_status('failed', sprintf(__('Key2Pay payment failed: %s. [Code: %s], Error: %s', 'key2pay'), $this->get_status_code_message($status_code), $status_code, $error_text));
-                if ($this->debug) {
-                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' failed - invalid transaction (Code: ' . $status_code . ')', ['source' => $this->id]);
-                }
-                break;
-            case self::CODE_TIMEOUT:
-                $order->update_status('failed', sprintf(__('Key2Pay payment failed: %s. [Code: %s], Error: %s', 'key2pay'), $this->get_status_code_message($status_code), $status_code, $error_text));
-                if ($this->debug) {
-                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' failed - timeout (Code: ' . $status_code . ')', ['source' => $this->id]);
-                }
-                break;
-            case self::CODE_DEBIT_PENDING:
-                // Thai QR Debit initial processing, treat as pending
-                $order->update_status('pending', sprintf(__('Key2Pay payment is processing. Transaction ID: %s, [Code: %s] - %s', 'key2pay'), $transaction_id, $status_code, $status_message));
-                if ($this->debug) {
-                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' marked as pending (Processing)', ['source' => $this->id]);
-                }
-                break;
-            case self::CODE_DEBIT_FAILED:
-                // Thai QR Debit failed, treat as failed
-                $order->update_status('failed', sprintf(__('Key2Pay payment failed: %s. [Code: %s], Error: %s', 'key2pay'), $this->get_status_code_message($status_code), $status_code, $error_text));
-                if ($this->debug) {
-                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' failed', ['source' => $this->id]);
-                }
-                break;
-            case self::CODE_CAPTURED:
-                $order->payment_complete($transaction_id);
-                $order->add_order_note(sprintf(__('Key2Pay payment completed successfully. Transaction ID: %s, [Code: %s] - %s', 'key2pay'), $transaction_id, $status_code, $status_message));
-                if ($this->debug) {
-                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' marked as paid (CAPTURED)', ['source' => $this->id]);
-                }
-                break;
-            default:
-                // Any other code not in the list, treat as pending or failed based on documentation.
-                // Current interpretation treats others as approved, which might need fine-tuning with Key2Pay docs.
-                // For now, keeping consistent with previous logic.
-                $order->payment_complete($transaction_id);
-                $order->add_order_note(sprintf(__('Key2Pay payment processed with unknown response code. Transaction ID: %s, [Code: %s] - %s', 'key2pay'), $transaction_id, $status_code, $status_message));
-                if ($this->debug) {
-                    $this->log->debug('Key2Pay Payment: Order #' . $order->get_id() . ' marked as paid (unknown code: ' . $status_code . ')', ['source' => $this->id]);
-                }
-                break;
-        }
-    }
-
-    /**
-     * Get descriptive error message for a specific status code.
-     *
-     * @param string $code The response code.
-     * @return string The descriptive error message.
-     */
-    protected function get_status_code_message($code)
-    {
-        $code = $this->extract_status_code($code);
-
-        switch ($code) {
-            case self::CODE_INVALID_CREDENTIALS:
-                return __('Payment failed: Invalid credentials. Please check your merchant ID and password.', 'key2pay');
-            case self::CODE_APPROVED:
-                return __('Payment approved successfully.', 'key2pay');
-            case self::CODE_INSUFFICIENT_FUNDS:
-                return __('Payment failed: Insufficient funds in the account.', 'key2pay');
-            case self::CODE_DO_NOT_HONOUR:
-                return __('Payment failed: Do not honour. The transaction was declined by the bank.', 'key2pay');
-            case self::CODE_RESTRICTED_CARD:
-                return __('Payment failed: Restricted card. This card cannot be used for this transaction.', 'key2pay');
-            case self::CODE_INVALID_TRANSACTION:
-                return __('Payment failed: Invalid transaction. The transaction details are not valid.', 'key2pay');
-            case self::CODE_TIMEOUT:
-                return __('Payment failed: Transaction timeout. The request took too long to process.', 'key2pay');
-            case self::CODE_DEBIT_PENDING:
-                return __('Payment processing: Awaiting confirmation.', 'key2pay');
-            case self::CODE_DEBIT_FAILED:
-                return __('Payment failed: The transaction was not completed.', 'key2pay');
-            default:
-                return __('Payment processed with unknown response code.', 'key2pay');
         }
     }
 
@@ -788,91 +876,6 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
     }
 
     /**
-     * Process a refund.
-     * This method is abstract as it might involve different APIs or parameters
-     * depending on the payment method type, although often it's a common refund API.
-     * For now, we'll delegate it to a potential 'main' gateway or make it concrete if common.
-     * @see https://key2pay.readme.io/reference/refund
-     *
-     * @param int    $order_id Order ID.
-     * @param float  $amount Refund amount.
-     * @param string $reason Refund reason.
-     * @return bool True if refund was successful, false otherwise.
-     */
-    public function process_refund($order_id, $amount = null, $reason = '')
-    {
-        // Retrieve transaction ID from order meta
-        $order          = wc_get_order($order_id);
-        $transaction_id = $order->get_meta('_key2pay_transaction_id');
-        $amount         = (float) $order->get_total();
-        $currency       = $order->get_currency();
-        $email          = $order->get_billing_email();
-        $endpoint       = $this->build_api_url('/transaction/refund');
-
-        if (empty($transaction_id)) {
-            $this->log->error('Key2Pay refund: No transaction ID found for order #' . $order_id, ['source' => $this->id]);
-            return false;
-        }
-
-        // Prepare refund data
-        $refund_data = [
-            'transactionid'     => $transaction_id,
-            'tranid'            => $transaction_id,
-            'trackid'           => $email, // Using email as track ID for refund
-            'bill_amount'       => $amount,
-            'bill_currencycode' => $currency,
-            'reason'            => $reason,
-        ];
-        $refund_data = $this->auth_handler->add_auth_to_body($refund_data);
-
-        $headers = ['Content-Type' => 'application/json'];
-        $headers = array_merge($headers, $this->auth_handler->get_auth_headers());
-
-        $this->log_to_file('Key2Pay refund Request: Preparing to send refund for order #' . $order_id);
-        $this->log_to_file('Key2Pay refund Request: API URL: ' . $endpoint);
-
-        $response = wp_remote_post(
-            $endpoint,
-            [
-                'method'    => 'POST',
-                'headers'   => $headers,
-                'body'      => json_encode($refund_data),
-                'timeout'   => 60,
-                'sslverify' => true,
-            ]
-        );
-
-        if (is_wp_error($response)) {
-            $error_message = $response->get_error_message();
-            $this->log->error(sprintf('Key2Pay refund API Request Failed for order #%s: %s', $order_id, $error_message), ['source' => $this->id]);
-            return false;
-        }
-
-        $body = wp_remote_retrieve_body($response);
-        $data = json_decode($body);
-
-        if ($this->debug) {
-            $this->log->debug(sprintf('Key2Pay refund API Response for order #%s: %s', $order_id, print_r($data, true)), ['source' => $this->id]);
-        }
-
-        // Key2Pay refund specific success/failure logic
-        // Note: Documentation is not provided yet, so this is based on common patterns.
-        // @see https://key2pay.readme.io/reference/refund
-        if (isset($data->type) && 'valid' === $data->type && isset($data->result) && ($data->result === 'CAPTURED' || $data->result === 'Success' || $data->responsecode == self::CODE_APPROVED)) {
-            $order->add_order_note(sprintf(__('Key2Pay refund successful. Amount: %s. Reason: %s. Transaction ID: %s', 'key2pay'), wc_price($amount), $reason, $transaction_id));
-            if ($this->debug) {
-                $this->log->debug('Key2Pay refund: Order #' . $order_id . ' refund successful.', ['source' => $this->id]);
-            }
-            return true;
-        } else {
-            $error_message = isset($data->error_text) ? $data->error_text : __('An unknown error occurred during Key2Pay refund.', 'key2pay');
-            $order->add_order_note(sprintf(__('Key2Pay refund failed. Amount: %s. Reason: %s. Error: %s', 'key2pay'), wc_price($amount), $reason, $error_message));
-            $this->log->error(sprintf('Key2Pay refund Failed for order #%s: %s', $order_id, $error_message), ['source' => $this->id]);
-            return false;
-        }
-    }
-
-    /**
      * Build a proper API URL by handling trailing slashes.
      *
      * @param string $endpoint The API endpoint (e.g., '/PaymentToken/Create').
@@ -914,13 +917,13 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
     {
         // Check if gateway is enabled
         if ('yes' !== $this->enabled) {
-            $this->log_to_file('Key2Pay Debug: Payment gateway ' . $this->id . ' disabled');
+            $this->debug_log('Key2Pay Debug: Payment gateway ' . $this->id . ' disabled');
             return false;
         }
 
         // Validate credentials based on selected authentication type
         if (! $this->auth_handler->is_configured()) {
-            $this->log_to_file('Key2Pay Debug: Missing credentials for ' . $this->id . ' with auth type ' . $this->auth_type);
+            $this->debug_log('Key2Pay Debug: Missing credentials for ' . $this->id . ' with auth type ' . $this->auth_type);
 
             if (is_admin() && current_user_can('manage_woocommerce') && (! defined('DOING_AJAX') || ! DOING_AJAX)) {
                 add_action('admin_notices', function () {
@@ -1000,16 +1003,16 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
     }
 
     /**
-     * Log messages to a custom log file.
+     * Log messages for debugging purposes.
      *
      * @param string|array $message The message to log.
-     * @param bool   $redact  Whether to redact sensitive information.
+     * @param bool   $redact_sensitive  Whether to redact sensitive information.
      */
-    protected function log_to_file($message, $redact_sensitive = true)
+    protected function debug_log($message, $redact_sensitive = true)
     {
-
+        // If debug is not enabled, do not log
         if (! $this->debug) {
-            return; // If debug is not enabled, do not log
+            return;
         }
 
         if ($redact_sensitive) {
@@ -1020,6 +1023,12 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
             $message = print_r($message, true);
         }
 
-        error_log('[' . date('Y-m-d H:i:s') . ' Key2Pay] [' . $this->id . '] ' . $message . PHP_EOL, 3, $this->custom_log_file);
+        $message = '[' . date('Y-m-d H:i:s') . '][Key2Pay][' . $this->id . '] ' . $message . PHP_EOL;
+
+        // Woocommerce logging
+        $this->log->debug($message);
+
+        // Custom log file
+        error_log($message, 3, $this->custom_log_file);
     }
 }

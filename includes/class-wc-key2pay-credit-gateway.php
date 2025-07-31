@@ -83,38 +83,14 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
     {
         $order = wc_get_order($order_id);
 
-        if ($this->debug) {
-            $this->log_to_file(sprintf('Processing redirect payment for order #%s.', $order_id));
-        }
+        $this->debug_log(sprintf('Processing redirect payment for order #%s.', $order_id));
 
         // Prepare data for Key2Pay Credit Card API request.
-        $amount      = (float) $order->get_total();
-        $currency    = $order->get_currency();
-        $customer_ip = WC_Geolocation::get_ip_address();
-        $endpoint    = $this->build_api_url('/PaymentToken/Create');
-        $return_url  = $this->get_return_url($order);
-        $server_url  = home_url('/wc-api/' . strtolower($this->id)); // Webhook endpoint for this gateway.
+        $endpoint     = $this->build_api_url('/PaymentToken/Create');
+        $request_data = $this->prepare_common_request_data($order);
 
-        // Initial request data for API call
-        $request_data = [
-            'payment_method'       => ['type' => self::PAYMENT_METHOD_TYPE], // 'CARD'
-            'trackid'              => $order->get_id() . '_' . time(),
-            'bill_currencycode'    => $currency,
-            'bill_amount'          => $amount,
-            'returnUrl'            => $return_url,
-            'returnUrl_on_failure' => add_query_arg('k2p-status', 'failed', $order->get_checkout_payment_url(false)),
-            'serverUrl'            => $server_url,
-            'productdesc'          => sprintf(__('Order %s from %s', 'key2pay'), $order->get_order_number(), get_bloginfo('name')),
-            'bill_customerip'      => $customer_ip,
-            'bill_phone'           => $order->get_billing_phone() ?: '',
-            'bill_email'           => $order->get_billing_email(),
-            'bill_country'         => $order->get_billing_country() ?: '',
-            'bill_city'            => $order->get_billing_city() ?: '',
-            'bill_state'           => $order->get_billing_state() ?: '',
-            'bill_address'         => $order->get_billing_address_1() ?: '',
-            'bill_zip'             => $order->get_billing_postcode(),
-            'lang'                 => self::DEFAULT_LANGUAGE,
-        ];
+        // Add Thai QR Debit specific fields to the request data.
+        $request_data['payment_method'] = ['type' => self::PAYMENT_METHOD_TYPE];
 
         // Add authentication data to request body if needed (e.g., Basic Auth)
         $request_data = $this->auth_handler->add_auth_to_body($request_data);
@@ -124,18 +100,18 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
         $headers = array_merge($headers, $this->auth_handler->get_auth_headers());
 
         // Log the complete request data before sending
-        $this->log_to_file('Key2Pay API Request: Preparing to send payment request for order #' . $order_id);
-        $this->log_to_file('Key2Pay API Request: API URL: ' . $endpoint);
+        $this->debug_log('Key2Pay API Request: Preparing to send payment request for order #' . $order_id);
+        $this->debug_log('Key2Pay API Request: API URL: ' . $endpoint);
 
         // Redact sensitive data in headers for logging
         $safe_headers = $this->redact_sensitive_data($headers);
-        $this->log_to_file('Key2Pay API Request: Headers: ' . print_r($safe_headers, true));
+        $this->debug_log('Key2Pay API Request: Headers: ' . print_r($safe_headers, true));
 
         // Redact sensitive data in request data for logging
         $safe_request_data = $this->redact_sensitive_data($request_data);
-        $this->log_to_file('Key2Pay API Request: Request Data: ' . print_r($safe_request_data, true));
-        $this->log_to_file('Key2Pay API Request: Webhook URL being sent: ' . $server_url);
-        $this->log_to_file('Key2Pay API Request: JSON payload length: ' . strlen(json_encode($request_data)) . ' characters');
+        $this->debug_log('Key2Pay API Request: Request Data: ' . print_r($safe_request_data, true));
+        $this->debug_log('Key2Pay API Request: Webhook URL being sent: ' . $request_data['serverUrl']);
+        $this->debug_log('Key2Pay API Request: JSON payload length: ' . strlen(json_encode($request_data)) . ' characters');
 
         // Make the API call to Key2Pay Credit Card endpoint.
         $response = wp_remote_post(
@@ -152,7 +128,7 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
         if (is_wp_error($response)) {
             $error_message = $this->extract_error_message($response, __('Invalid Key2Pay API response.', 'key2pay'));
             wc_add_notice(sprintf(__('Key2Pay Credit Card payment error: %s', 'key2pay'), $error_message), 'error');
-            $this->log_to_file(sprintf('Key2Pay Credit Card API Request Failed for order #%s: %s', $order_id, $error_message));
+            $this->debug_log(sprintf('Key2Pay Credit Card API Request Failed for order #%s: %s', $order_id, $error_message));
             return [
                 'result'   => 'failure',
                 'redirect' => '',
@@ -162,7 +138,7 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body);
 
-        $this->log_to_file(sprintf('Key2Pay Credit Card API Response for order #%s: %s', $order_id, print_r($data, true)));
+        $this->debug_log(sprintf('Key2Pay Credit Card API Response for order #%s: %s', $order_id, print_r($data, true)));
 
         // Process the API response.
         if (isset($data->type) && 'valid' === $data->type) {
@@ -171,7 +147,7 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
                 // Check for "Not Successful" response code
                 if (! empty($data->result) && trim($data->result) == "Not Successful") {
                     wc_add_notice(sprintf(__('Key2Pay payment failed: %s', 'key2pay'), $this->extract_error_message($data)), 'error');
-                    $this->log_to_file(sprintf('Key2Pay Credit Card Not Successful for order #%s: %s', $order_id, $data->error_text ?? 'Unknown error'));
+                    $this->debug_log(sprintf('Key2Pay Credit Card Not Successful for order #%s: %s', $order_id, $data->error_text ?? 'Unknown error'));
                     return [
                         'result'   => 'failure',
                         'redirect' => '',
@@ -189,7 +165,7 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
                     $order->update_meta_data('_key2pay_track_id', $data->trackid);
                 }
                 if (! empty($data->token)) {
-                    $this->log_to_file(sprintf('Key2Pay Token for order #%s: %s', $order_id, $data->token));
+                    $this->debug_log(sprintf('Key2Pay Token for order #%s: %s', $order_id, $data->token));
                     $order->update_meta_data('_key2pay_token', $data->token);
                 }
 
@@ -203,9 +179,7 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
                 // Valid response but no redirect URL, which is unexpected.
                 $error_message = $this->extract_error_message($data, __('Payment session created, but no redirection URL received.', 'key2pay'));
                 wc_add_notice(sprintf(__('Key2Pay Credit Card failed: %s', 'key2pay'), $error_message), 'error');
-                if ($this->debug) {
-                    $this->log_to_file(sprintf('Key2Pay Credit Card Missing Redirect URL for order #%s: %s', $order_id, $error_message));
-                }
+                $this->debug_log(sprintf('Key2Pay Credit Card Missing Redirect URL for order #%s: %s', $order_id, $error_message));
                 return [
                     'result'   => 'failure',
                     'redirect' => '',
@@ -215,7 +189,7 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
             // Payment session creation failed or API returned an error.
             $error_message = $this->extract_error_message($data, __('An unknown error occurred with Key2Pay Credit Card.', 'key2pay'));
             wc_add_notice(sprintf(__('Key2Pay Credit Card payment failed: %s', 'key2pay'), $error_message), 'error');
-            $this->log_to_file(sprintf('Key2Pay Credit Card API Error for order #%s: %s', $order_id, $error_message));
+            $this->debug_log(sprintf('Key2Pay Credit Card API Error for order #%s: %s', $order_id, $error_message));
             return [
                 'result'   => 'failure',
                 'redirect' => '',
