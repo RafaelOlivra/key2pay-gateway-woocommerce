@@ -57,7 +57,7 @@ const ThaiDebitFieldsContent = (props) => {
         const unsubscribe = onPaymentSetup(async () => {
             const isValid = accountNo && accountName && bankCode;
             const cartTotals = store.getCartTotals();
-            const hasMinimumAmount = cartTotals.total >= 100;
+            const hasMinimumAmount = cartTotals.total_price >= 100;
 
             // Check if the total amount is sufficient for Thai QR Debit
             if (!hasMinimumAmount) {
