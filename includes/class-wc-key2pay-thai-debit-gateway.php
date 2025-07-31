@@ -243,7 +243,7 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
                 $order->save();
 
                 /**
-                 * [!] For TEST enviroment only
+                 * [!] For TEST environment only
                  * Key2Pay will return an invalid redirect URL in test mode.
                  * If merchant_id contains 'TEST', we can redirect to the order confirmation page instead.
                  * This is a workaround for the test environment.
