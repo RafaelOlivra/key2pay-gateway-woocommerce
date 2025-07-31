@@ -32,7 +32,7 @@ class WC_Key2Pay_Gateway_Plugin
      */
     public function __construct()
     {
-        add_action('plugins_loaded', array( $this, 'init' ));
+        add_action('plugins_loaded', [$this, 'init']);
     }
 
     /**
@@ -57,14 +57,14 @@ class WC_Key2Pay_Gateway_Plugin
         // require_once KEY2PAY_PLUGIN_PATH . 'includes/_class-wc-key2pay-redirect-gateway.php';
 
         // Add the Key2Pay Gateways to WooCommerce.
-        add_filter('woocommerce_payment_gateways', array($this, 'add_key2pay_gateways'));
-        add_action('woocommerce_blocks_loaded', array($this, 'register_key2pay_payment_blocks'));
+        add_filter('woocommerce_payment_gateways', [$this, 'add_key2pay_gateways']);
+        add_action('woocommerce_blocks_loaded', [$this, 'register_key2pay_payment_blocks']);
 
         // Load plugin text domain.
         load_plugin_textdomain('key2pay', false, KEY2PAY_PLUGIN_PATH . '/languages');
 
         // Enqueue scripts and styles for the checkout page.
-        add_action('wp_enqueue_scripts', array( $this, 'key2pay_enqueue_checkout_scripts' ));
+        add_action('wp_enqueue_scripts', [$this, 'key2pay_enqueue_checkout_scripts']);
 
         // Declare compatibility with WooCommerce custom order tables (HPOS).
         add_action('before_woocommerce_init', function () {
@@ -78,7 +78,7 @@ class WC_Key2Pay_Gateway_Plugin
         });
 
         // Add settings link on plugins page
-        add_filter('plugin_action_links_' . plugin_basename(__FILE__), array( $this, 'add_plugin_action_links' ));
+        add_filter('plugin_action_links_' . plugin_basename(__FILE__), [$this, 'add_plugin_action_links']);
     }
 
     /**
@@ -90,8 +90,8 @@ class WC_Key2Pay_Gateway_Plugin
     public function key2pay_enqueue_checkout_scripts()
     {
         if (is_checkout() && ! is_wc_endpoint_url()) {
-            wp_enqueue_script('key2pay-checkout', KEY2PAY_PLUGIN_URL . 'assets/js/key2pay-checkout.js', array( 'jquery' ), KEY2PAY_GATEWAY_VERSION, true);
-            wp_enqueue_style('key2pay-styles', KEY2PAY_PLUGIN_URL . 'assets/css/key2pay.css', array(), KEY2PAY_GATEWAY_VERSION);
+            wp_enqueue_script('key2pay-checkout', KEY2PAY_PLUGIN_URL . 'assets/js/key2pay-checkout.js', ['jquery'], KEY2PAY_GATEWAY_VERSION, true);
+            wp_enqueue_style('key2pay-styles', KEY2PAY_PLUGIN_URL . 'assets/css/key2pay.css', [], KEY2PAY_GATEWAY_VERSION);
         }
     }
 
@@ -117,7 +117,7 @@ class WC_Key2Pay_Gateway_Plugin
      */
     public function register_key2pay_payment_blocks()
     {
-        if (!class_exists('\\Automattic\\WooCommerce\\Blocks\\Payments\\Integrations\\AbstractPaymentMethodType')) {
+        if (! class_exists('\\Automattic\\WooCommerce\\Blocks\\Payments\\Integrations\\AbstractPaymentMethodType')) {
             return;
         }
 
