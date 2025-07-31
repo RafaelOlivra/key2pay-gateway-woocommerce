@@ -289,7 +289,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
             return;
         }
 
-        // Check if we have URL parameters from the Key2Pay redirect
+        // Check if we have URL parameters from the Key2Pay Credit Card
         // Since fallback is enabled, we process them and redirect to clean URL.
         if (isset($_GET['result']) || isset($_GET['responsecode']) || isset($_GET['trackid'])) {
             $this->log_to_file('Key2Pay Gateway: URL parameters detected - Processing as fallback for order #' . $order_id);
@@ -669,7 +669,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
     protected function extract_status_code($code)
     {
 
-        $know_keys = ['responsecode', 'error_code_tag', 'error_text'];
+        $known_keys = ['responsecode', 'error_code_tag', 'error_text'];
 
         // If it's a class instance, attempt to convert to an array
         if (is_object($code)) {
@@ -679,7 +679,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
                 $code = $code->get_data();
             } else {
                 // Check for known keys in the object
-                foreach ($know_keys as $key) {
+                foreach ($known_keys as $key) {
                     if (isset($code->$key)) {
                         $code = $code->$key;
                         break;
@@ -690,7 +690,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
 
         // If it's an array, attempt to extract the code from known keys
         if (is_array($code)) {
-            foreach ($know_keys as $key) {
+            foreach ($known_keys as $key) {
                 if (isset($code[$key])) {
                     $code = $code[$key];
                     break;
@@ -703,6 +703,58 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
             return $matches[1];
         }
         return $code;
+    }
+
+    /**
+     * Extract error message from response data.
+     * This method handles both objects and arrays, extracting known keys.
+     *
+     * @param mixed $data The response data (object or array).
+     * @param string $default_message Default message if no error found.
+     * @return string The extracted error message or code.
+     */
+    protected function extract_error_message($data, $default_message = '')
+    {
+
+        $known_keys      = ['extendedresponse', 'responsedescription', 'error_code_tag', 'error_text', 'result'];
+        $error           = '';
+        $default_message = $default_message ?: __('An unknown error occurred.', 'key2pay');
+
+        $this->log_to_file('Key2Pay: Extracting error message from data: ' . print_r($data, true));
+
+        // If it's a class instance, attempt to convert to an array
+        if (is_object($data)) {
+            if (method_exists($data, 'to_array')) {
+                $data = $data->to_array();
+            } elseif (method_exists($data, 'get_data')) {
+                $data = $data->get_data();
+            } else {
+                // Check for known keys in the object
+                foreach ($known_keys as $key) {
+                    if (isset($data->$key)) {
+                        $error = $data->$key;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // If it's an array, attempt to extract the code from known keys
+        if (is_array($data)) {
+            foreach ($known_keys as $key) {
+                if (isset($data[$key])) {
+                    $error = $data[$key];
+                    break;
+                }
+            }
+        }
+
+        // Check for wp_error object
+        if (is_wp_error($data)) {
+            $error = $data->get_error_message();
+        }
+
+        return $error ? $error : $default_message;
     }
 
     /**
@@ -871,6 +923,38 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
     }
 
     /**
+     * Check if the current page is the "Pay for Order" page.
+     * This method is common and can remain in the base class.
+     *
+     * @return bool True if on the "Pay for Order" page, false otherwise.
+     */
+    public function is_pay_for_order_page()
+    {
+        if (! is_wc_endpoint_url('order-pay')) {
+            return false;
+        }
+
+        $order_id  = isset($_GET['order']) ? absint($_GET['order']) : get_query_var('order-pay');
+        $order_key = isset($_GET['key']) ? sanitize_text_field($_GET['key']) : '';
+
+        if (! $order_id || ! $order_key) {
+            return false;
+        }
+
+        $order = wc_get_order($order_id);
+
+        if (! $order || $order->get_order_key() !== $order_key) {
+            return false;
+        }
+
+        if ($order->get_payment_method() !== $this->id) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Redact sensitive data from an array for logging.
      *
      * @param array $array The array to redact.
@@ -912,6 +996,11 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
      */
     protected function log_to_file($message, $redact_sensitive = true)
     {
+
+        if (! $this->debug) {
+            return; // If debug is not enabled, do not log
+        }
+
         if ($redact_sensitive) {
             $message = $this->redact_sensitive_data($message);
         }

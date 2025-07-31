@@ -102,7 +102,7 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
             'bill_currencycode'    => $currency,
             'bill_amount'          => $amount,
             'returnUrl'            => $return_url,
-            'returnUrl_on_failure' => $order->get_checkout_payment_url(false),
+            'returnUrl_on_failure' => add_query_arg('k2p-status', 'failed', $order->get_checkout_payment_url(false)),
             'serverUrl'            => $server_url,
             'productdesc'          => sprintf(__('Order %s from %s', 'key2pay'), $order->get_order_number(), get_bloginfo('name')),
             'bill_customerip'      => $customer_ip,
@@ -150,11 +150,9 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
         );
 
         if (is_wp_error($response)) {
-            $error_message = $response->get_error_message();
-            wc_add_notice(sprintf(__('Key2Pay redirect payment error: %s', 'key2pay'), $error_message), 'error');
-            if ($this->debug) {
-                $this->log_to_file(sprintf('Key2Pay redirect API Request Failed for order #%s: %s', $order_id, $error_message));
-            }
+            $error_message = $this->extract_error_message($response, __('Invalid Key2Pay API response.', 'key2pay'));
+            wc_add_notice(sprintf(__('Key2Pay Credit Card payment error: %s', 'key2pay'), $error_message), 'error');
+            $this->log_to_file(sprintf('Key2Pay Credit Card API Request Failed for order #%s: %s', $order_id, $error_message));
             return [
                 'result'   => 'failure',
                 'redirect' => '',
@@ -164,13 +162,22 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body);
 
-        if ($this->debug) {
-            $this->log_to_file(sprintf('Key2Pay redirect API Response for order #%s: %s', $order_id, print_r($data, true)));
-        }
+        $this->log_to_file(sprintf('Key2Pay Credit Card API Response for order #%s: %s', $order_id, print_r($data, true)));
 
         // Process the API response.
         if (isset($data->type) && 'valid' === $data->type) {
-            if (isset($data->redirectUrl) && ! empty($data->redirectUrl)) {
+            if (! empty($data->redirectUrl)) {
+
+                // Check for "Not Successful" response code
+                if (! empty($data->result) && trim($data->result) == "Not Successful") {
+                    wc_add_notice(sprintf(__('Key2Pay payment failed: %s', 'key2pay'), $this->extract_error_message($data)), 'error');
+                    $this->log_to_file(sprintf('Key2Pay Credit Card Not Successful for order #%s: %s', $order_id, $data->error_text ?? 'Unknown error'));
+                    return [
+                        'result'   => 'failure',
+                        'redirect' => '',
+                    ];
+                }
+
                 // Payment session created successfully, redirect customer to Key2Pay.
                 $order->update_status('pending', __('Awaiting Key2Pay payment confirmation.', 'key2pay'));
 
@@ -193,10 +200,10 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
                 ];
             } else {
                 // Valid response but no redirect URL, which is unexpected.
-                $error_message = isset($data->error_text) ? $data->error_text : __('Payment session created, but no redirection URL received.', 'key2pay');
-                wc_add_notice(sprintf(__('Key2Pay redirect failed: %s', 'key2pay'), $error_message), 'error');
+                $error_message = $this->extract_error_message($data, __('Payment session created, but no redirection URL received.', 'key2pay'));
+                wc_add_notice(sprintf(__('Key2Pay Credit Card failed: %s', 'key2pay'), $error_message), 'error');
                 if ($this->debug) {
-                    $this->log_to_file(sprintf('Key2Pay redirect Missing Redirect URL for order #%s: %s', $order_id, $error_message));
+                    $this->log_to_file(sprintf('Key2Pay Credit Card Missing Redirect URL for order #%s: %s', $order_id, $error_message));
                 }
                 return [
                     'result'   => 'failure',
@@ -205,11 +212,9 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
             }
         } else {
             // Payment session creation failed or API returned an error.
-            $error_message = isset($data->error_text) ? $data->error_text : __('An unknown error occurred with Key2Pay redirect.', 'key2pay');
-            wc_add_notice(sprintf(__('Key2Pay redirect payment failed: %s', 'key2pay'), $error_message), 'error');
-            if ($this->debug) {
-                $this->log_to_file(sprintf('Key2Pay redirect API Error for order #%s: %s', $order_id, $error_message));
-            }
+            $error_message = $this->extract_error_message($data, __('An unknown error occurred with Key2Pay Credit Card.', 'key2pay'));
+            wc_add_notice(sprintf(__('Key2Pay Credit Card payment failed: %s', 'key2pay'), $error_message), 'error');
+            $this->log_to_file(sprintf('Key2Pay Credit Card API Error for order #%s: %s', $order_id, $error_message));
             return [
                 'result'   => 'failure',
                 'redirect' => '',

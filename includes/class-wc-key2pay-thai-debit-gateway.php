@@ -177,7 +177,7 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
             'payer_account_name'   => $payer_account_name,
             'payer_bank_code'      => $payer_bank_code,
             'productdesc'          => sprintf(__('Order %s from %s', 'key2pay'), $order->get_order_number(), get_bloginfo('name')),
-            'returnUrl_on_failure' => $order->get_checkout_payment_url(false),
+            'returnUrl_on_failure' => add_query_arg('k2p-status', 'failed', $order->get_checkout_payment_url(false)),
             'lang'                 => self::DEFAULT_LANGUAGE,
             'bill_phone'           => $order->get_billing_phone() ?: '',
             'bill_city'            => $order->get_billing_city() ?: '',
@@ -220,11 +220,9 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         );
 
         if (is_wp_error($response)) {
-            $error_message = $response->get_error_message();
+            $error_message = $this->extract_error_message($response, __('Invalid Key2Pay API response.', 'key2pay'));
             wc_add_notice(sprintf(__('Key2Pay Thai QR Debit payment error: %s', 'key2pay'), $error_message), 'error');
-            if ($this->debug) {
-                $this->log_to_file(sprintf('Key2Pay Thai QR Debit API Request Failed for order #%s: %s', $order_id, $error_message));
-            }
+            $this->log_to_file(sprintf('Key2Pay Thai QR Debit API Request Failed for order #%s: %s', $order_id, $error_message));
             return [
                 'result'   => 'failure',
                 'redirect' => '',
@@ -233,15 +231,22 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
 
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body);
-
-        if ($this->debug) {
-            $this->log_to_file(sprintf('Key2Pay Thai QR Debit API Response for order #%s: %s', $order_id, print_r($this->redact_sensitive_data($data), true)));
-        }
+        $this->log_to_file(sprintf('Key2Pay Thai QR Debit API Response for order #%s: %s', $order_id, print_r($this->redact_sensitive_data($data), true)));
 
         // Process the API response.
         // @see https://key2pay.readme.io/reference/debitsolution
         if (isset($data->type) && 'valid' === $data->type) {
             if (! empty($data->redirectUrl)) {
+
+                // Check for "Not Successful" response code
+                if (! empty($data->result) && trim($data->result) == "Not Successful") {
+                    wc_add_notice(sprintf(__('Key2Pay Credit Card payment failed: %s', 'key2pay'), $this->extract_error_message($data)), 'error');
+                    $this->log_to_file(sprintf('Key2Pay Credit Card Not Successful for order #%s: %s', $order_id, $data->error_text ?? 'Unknown error'));
+                    return [
+                        'result'   => 'failure',
+                        'redirect' => '',
+                    ];
+                }
 
                 // Expect transactionid to be present in the response
                 if (empty($data->transactionid)) {
@@ -274,7 +279,7 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
             } else {
                 // Valid response but no redirect URL, which is unexpected for Thai QR Debit QR.
                 wc_add_notice($this->get_user_friendly_error_message($data), 'error');
-                $error_message = isset($data->error_text) ? $data->error_text : __('Payment session created, but no redirection URL received for Thai QR Debit.', 'key2pay');
+                $error_message = $this->extract_error_message($data, __('Payment session created, but no redirection URL received for Thai QR Debit.', 'key2pay'));
                 if ($this->debug) {
                     $this->log_to_file(sprintf('Key2Pay Thai QR Debit Missing Redirect URL for order #%s: %s', $order_id, $error_message));
                 }
@@ -286,10 +291,8 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         } else {
             // Payment session creation failed or API returned an error.
             wc_add_notice($this->get_user_friendly_error_message($data), 'error');
-            $error_message = isset($data->error_text) ? $data->error_text : __('An unknown error occurred with Key2Pay Thai QR Debit.', 'key2pay');
-            if ($this->debug) {
-                $this->log_to_file(sprintf('Key2Pay Thai QR Debit API Error for order #%s: %s', $order_id, $error_message));
-            }
+            $error_message = $this->extract_error_message($data, __('An unknown error occurred with Key2Pay Thai QR Debit.', 'key2pay'));
+            $this->log_to_file(sprintf('Key2Pay Thai QR Debit API Error for order #%s: %s', $order_id, $error_message));
             return [
                 'result'   => 'failure',
                 'redirect' => '',
