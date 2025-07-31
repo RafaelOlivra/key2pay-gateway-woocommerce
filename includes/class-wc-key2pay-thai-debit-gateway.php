@@ -157,13 +157,9 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         $request_data = $this->prepare_common_request_data($order);
 
         // Add Thai QR Debit specific fields to the request data.
-        $request_data['payment_method']     = ['type' => self::PAYMENT_METHOD_TYPE];
         $request_data['payer_account_no']   = $payer_account_no;
         $request_data['payer_account_name'] = $payer_account_name;
         $request_data['payer_bank_code']    = $payer_bank_code;
-
-        // Add authentication data to request body (for Basic Auth, merchantid and password)
-        $request_data = $this->auth_handler->add_auth_to_body($request_data);
 
         // Get authentication headers (e.g., API Key, Bearer Token - empty for Basic Auth)
         $headers = ['Content-Type' => 'application/json'];

@@ -235,7 +235,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
     }
 
     /**
-     * Prepare common order data for Key2Pay payment request.
+     * Prepare common request data for Key2Pay payment request.
      * This method is used by all Key2Pay gateways to prepare the order data
      * that will be sent to Key2Pay for processing.
      *
@@ -257,7 +257,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
         $return_url  = $this->get_return_url($order);
         $server_url  = home_url('/wc-api/' . strtolower($this->id));
 
-        $order_data = [
+        $request_data = [
             'payment_method'       => ['type' => self::PAYMENT_METHOD_TYPE],
             'trackid'              => $order->get_id() . '_' . time(),
             'bill_currencycode'    => $currency,
@@ -277,7 +277,10 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
             'bill_zip'             => $order->get_billing_postcode(),
         ];
 
-        return $order_data;
+        // Add authentication data to the request.
+        $request_data = $this->auth_handler->add_auth_to_body($request_data);
+
+        return $request_data;
     }
 
     /**
@@ -592,40 +595,6 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
     }
 
     /**
-     * Get descriptive error message for a specific status code.
-     *
-     * @param string $code The response code.
-     * @return string The descriptive error message.
-     */
-    protected function get_status_code_message($code)
-    {
-        $code = $this->extract_status_code($code);
-
-        switch ($code) {
-            case self::CODE_INVALID_CREDENTIALS:
-                return __('Payment failed: Invalid credentials. Please check your merchant ID and password.', 'key2pay');
-            case self::CODE_APPROVED:
-                return __('Payment approved successfully.', 'key2pay');
-            case self::CODE_INSUFFICIENT_FUNDS:
-                return __('Payment failed: Insufficient funds in the account.', 'key2pay');
-            case self::CODE_DO_NOT_HONOUR:
-                return __('Payment failed: Do not honour. The transaction was declined by the bank.', 'key2pay');
-            case self::CODE_RESTRICTED_CARD:
-                return __('Payment failed: Restricted card. This card cannot be used for this transaction.', 'key2pay');
-            case self::CODE_INVALID_TRANSACTION:
-                return __('Payment failed: Invalid transaction. The transaction details are not valid.', 'key2pay');
-            case self::CODE_TIMEOUT:
-                return __('Payment failed: Transaction timeout. The request took too long to process.', 'key2pay');
-            case self::CODE_DEBIT_PENDING:
-                return __('Payment processing: Awaiting confirmation.', 'key2pay');
-            case self::CODE_DEBIT_FAILED:
-                return __('Payment failed: The transaction was not completed.', 'key2pay');
-            default:
-                return __('Payment processed with unknown response code.', 'key2pay');
-        }
-    }
-
-    /**
      * Output for the order received page.
      * Handles URL fallback logic and messages based on order status.
      * This method is common and can remain in the base class.
@@ -687,6 +656,40 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
             echo wpautop(wp_kses_post($this->get_user_friendly_error_message_for_failed_order($order)));
         } else {
             echo wpautop(wp_kses_post(__('Thank you for your order. We will process your payment shortly.', 'key2pay')));
+        }
+    }
+
+    /**
+     * Get descriptive error message for a specific status code.
+     *
+     * @param string $code The response code.
+     * @return string The descriptive error message.
+     */
+    protected function get_status_code_message($code)
+    {
+        $code = $this->extract_status_code($code);
+
+        switch ($code) {
+            case self::CODE_INVALID_CREDENTIALS:
+                return __('Payment failed: Invalid credentials. Please check your merchant ID and password.', 'key2pay');
+            case self::CODE_APPROVED:
+                return __('Payment approved successfully.', 'key2pay');
+            case self::CODE_INSUFFICIENT_FUNDS:
+                return __('Payment failed: Insufficient funds in the account.', 'key2pay');
+            case self::CODE_DO_NOT_HONOUR:
+                return __('Payment failed: Do not honour. The transaction was declined by the bank.', 'key2pay');
+            case self::CODE_RESTRICTED_CARD:
+                return __('Payment failed: Restricted card. This card cannot be used for this transaction.', 'key2pay');
+            case self::CODE_INVALID_TRANSACTION:
+                return __('Payment failed: Invalid transaction. The transaction details are not valid.', 'key2pay');
+            case self::CODE_TIMEOUT:
+                return __('Payment failed: Transaction timeout. The request took too long to process.', 'key2pay');
+            case self::CODE_DEBIT_PENDING:
+                return __('Payment processing: Awaiting confirmation.', 'key2pay');
+            case self::CODE_DEBIT_FAILED:
+                return __('Payment failed: The transaction was not completed.', 'key2pay');
+            default:
+                return __('Payment processed with unknown response code.', 'key2pay');
         }
     }
 
