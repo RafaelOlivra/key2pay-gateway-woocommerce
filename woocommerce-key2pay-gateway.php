@@ -89,7 +89,7 @@ class WC_Key2Pay_Gateway_Plugin
      */
     public function key2pay_enqueue_checkout_scripts()
     {
-        if (is_checkout() && ! is_wc_endpoint_url()) {
+        if (is_checkout()) {
             wp_enqueue_script('key2pay-checkout', KEY2PAY_PLUGIN_URL . 'assets/js/key2pay-checkout.js', ['jquery'], KEY2PAY_GATEWAY_VERSION, true);
             wp_enqueue_style('key2pay-styles', KEY2PAY_PLUGIN_URL . 'assets/css/key2pay.css', [], KEY2PAY_GATEWAY_VERSION);
         }
