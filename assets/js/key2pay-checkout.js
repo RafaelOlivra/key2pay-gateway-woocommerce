@@ -1,22 +1,25 @@
 jQuery(document).ready(function ($) {
     "use strict";
 
+    const __ = wp.i18n.__;
+
     /** ### Handle Thai QR Debit fields ## */
 
     if ($("body").hasClass("woocommerce-checkout")) {
+        // Automatically fill Thai Debit fields if they are empty
         function autoFillThaiDebitFields() {
-            const debitAccountNameEl = $('input[name="payer_account_name"]');
-            const debitAccountNoEl = $('input[name="payer_account_no"]');
-            const debitAccountBankCodeEl = $('input[name="payer_bank_code"]');
+            const PayerAccountNameEl = $('input[name="payer_account_name"]');
+            const PayerAccountNoEl = $('input[name="payer_account_no"]');
+            const PayerAccountBankCodeEl = $('input[name="payer_bank_code"]');
 
             // Set the values from localStorage if they are empty initially
             setInputFromData(
-                debitAccountNameEl,
+                PayerAccountNameEl,
                 "key2pay_thai_debit_account_name"
             );
-            setInputFromData(debitAccountNoEl, "key2pay_thai_debit_account_no");
+            setInputFromData(PayerAccountNoEl, "key2pay_thai_debit_account_no");
             setInputFromData(
-                debitAccountBankCodeEl,
+                PayerAccountBankCodeEl,
                 "key2pay_thai_debit_bank_code"
             );
         }
@@ -25,6 +28,24 @@ jQuery(document).ready(function ($) {
         // as they will be handled by the block itself.
         if ($('[data-block-name="woocommerce/checkout"]').length === 0) {
             autoFillThaiDebitFields();
+        }
+
+        // Thai QR Debit requires the order amount to be 100 or more
+        const orderTotal = getOrderTotal();
+        console.log(`Key2Pay Thai QR Debit: Order total is ${orderTotal}`);
+        if (orderTotal && parseFloat(orderTotal) < 10000) {
+            // Disable the Thai QR Debit payment method if the order total is less than 100
+            $(".wc_payment_method.payment_method_key2pay_thai_debit")
+                .addClass("disabled")
+                .find("input[type='radio']")
+                .prop("disabled", true);
+
+            $("label[for='payment_method_key2pay_thai_debit']").append(
+                `<span class="key2pay-error">${__(
+                    "Thai QR Debit is only available for orders of 100 or more.",
+                    "key2pay"
+                )}</span>`
+            );
         }
     }
 
@@ -48,6 +69,23 @@ jQuery(document).ready(function ($) {
      */
     function setData(key, value) {
         localStorage.setItem(key, value);
+    }
+
+    /**
+     * Get the order total from the WooCommerce checkout page.
+     * [!] This is not a reliable way to get the order total, as it may not be present in all themes.
+     * It is better to use the WooCommerce API to get the order total.
+     * But should be ok for simple use cases.
+     * @returns {string|null} The order total as a string, or null if not found.
+     */
+    function getOrderTotal() {
+        const orderTotalEl = $(
+            ".woocommerce-Price-amount bdi, .woocommerce-Price-amount .amount"
+        ).eq(0);
+        if (orderTotalEl.length) {
+            return parseFloat(orderTotalEl.text().replace(/[^0-9.-]+/g, ""));
+        }
+        return null;
     }
 
     /**

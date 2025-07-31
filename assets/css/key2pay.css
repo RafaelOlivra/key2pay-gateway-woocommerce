@@ -4,7 +4,7 @@
 /* Payment gateway icon sizing */
 
 
-/* Frontend (checkout) icon styling */
+/* Frontend (checkout) styling */
 
 div#key2pay_credit *>img.woocommerce-list__item-image {
     object-fit: cover;
@@ -17,6 +17,12 @@ div#key2pay_credit *>img.woocommerce-list__item-image {
     display: none;
 }
 
+.key2pay-error {
+    font-size: .8em;
+    display: block;
+    color: #dc3545;
+    font-weight: normal;
+}
 
 /* Admin/Backend icon styling */
 
@@ -70,6 +76,7 @@ div#key2pay_credit *>img.woocommerce-list__item-image {
     0% {
         transform: rotate(0deg);
     }
+
     100% {
         transform: rotate(360deg);
     }

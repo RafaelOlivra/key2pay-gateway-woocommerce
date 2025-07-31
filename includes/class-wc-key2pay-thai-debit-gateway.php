@@ -248,11 +248,11 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
                     ];
                 }
 
-                // Expect transactionid to be present in the response
-                if (empty($data->transactionid)) {
+                // Expect transactionid and token to be present in the response
+                if (empty($data->transactionid) || empty($data->token)) {
                     wc_add_notice($this->get_user_friendly_error_message($data), 'error');
                     if ($this->debug) {
-                        $this->log_to_file(sprintf('Key2Pay Thai QR Debit Missing Transaction ID for order #%s', $order_id));
+                        $this->log_to_file(sprintf('Key2Pay Thai QR Debit Missing Transaction ID or Token for order #%s', $order_id));
                     }
                     return [
                         'result'   => 'failure',
@@ -264,12 +264,17 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
                 $order->update_status('pending', __('Awaiting Key2Pay Thai QR Debit payment confirmation.', 'key2pay'));
 
                 // Store Key2Pay transaction details.
-                if (isset($data->transactionid)) {
+                if (! empty($data->transactionid)) {
                     $order->update_meta_data('_key2pay_transaction_id', $data->transactionid);
                 }
-                if (isset($data->trackid)) {
+                if (! empty($data->trackid)) {
                     $order->update_meta_data('_key2pay_track_id', $data->trackid);
                 }
+                if (! empty($data->token)) {
+                    $order->update_meta_data('_key2pay_token', $data->token);
+                    $this->log_to_file(sprintf('Key2Pay Token for order #%s: %s', $order_id, $data->token));
+                }
+
                 $order->save();
 
                 return [

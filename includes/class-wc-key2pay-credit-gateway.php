@@ -189,6 +189,7 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
                     $order->update_meta_data('_key2pay_track_id', $data->trackid);
                 }
                 if (! empty($data->token)) {
+                    $this->log_to_file(sprintf('Key2Pay Token for order #%s: %s', $order_id, $data->token));
                     $order->update_meta_data('_key2pay_token', $data->token);
                 }
 

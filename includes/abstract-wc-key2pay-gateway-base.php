@@ -417,7 +417,8 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
         $track_id       = isset($webhook_data['trackid']) ? $webhook_data['trackid'] : '';
         $merchant_id    = isset($webhook_data['merchantid']) ? $webhook_data['merchantid'] : '';
         $transaction_id = isset($webhook_data['transactionid']) ? $webhook_data['transactionid'] : '';
-        $error_code_tag = isset($webhook_data['error_code_tag']) ? $webhook_data['error_code_tag'] : '';
+        $token          = isset($webhook_data['token']) ? $webhook_data['token'] : '';
+        $token          = ! empty($token) ? $token : (isset($webhook_data['udf4']) ? $webhook_data['udf4'] : ''); // Fallback to udf4 if token is not set
         $error_text     = isset($webhook_data['error_text']) ? $webhook_data['error_text'] : '';
 
         $this->log_to_file('Key2Pay Webhook: Extracted fields - type: ' . $type . ', result: ' . $result . ', response_code: ' . $response_code . ', track_id: ' . $track_id . ', merchant_id: ' . $merchant_id . ', transaction_id: ' . $transaction_id);
@@ -438,6 +439,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
             }
         }
 
+        // Order not found or track_id is empty
         if (! $order) {
             $this->log_to_file('Key2Pay Webhook: Order not found for track_id: ' . $track_id);
             if ($this->debug) {
@@ -450,6 +452,17 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
         $this->log_to_file('Key2Pay Webhook: Found order #' . $order->get_id() . ' - current status: ' . $order->get_status());
         if ($this->debug) {
             $this->log->debug('Key2Pay Webhook: Processing payment for order #' . $order->get_id(), ['source' => $this->id]);
+        }
+
+        // [!] Make sure the token matches the order's token
+        // This is a security measure to ensure the webhook is for the correct order.
+        if ($token && $order->get_meta('_key2pay_token') !== $token) {
+            $this->log_to_file('Key2Pay Webhook: Token mismatch for order #' . $order->get_id() . '. Expected: ' . $order->get_meta('_key2pay_token') . ', Received: ' . $token);
+            if ($this->debug) {
+                $this->log->error('Key2Pay Webhook: Token mismatch for order #' . $order->get_id() . '. Expected: ' . $order->get_meta('_key2pay_token') . ', Received: ' . $token, ['source' => $this->id]);
+            }
+            wp_send_json_error(['message' => __('Token mismatch for order #' . $order->get_id() . '. Please try again.', 'key2pay')]);
+            exit();
         }
 
         // Process the payment status based on Key2Pay gateway response codes
@@ -719,8 +732,6 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
         $known_keys      = ['extendedresponse', 'responsedescription', 'error_code_tag', 'error_text', 'result'];
         $error           = '';
         $default_message = $default_message ?: __('An unknown error occurred.', 'key2pay');
-
-        $this->log_to_file('Key2Pay: Extracting error message from data: ' . print_r($data, true));
 
         // If it's a class instance, attempt to convert to an array
         if (is_object($data)) {
