@@ -277,6 +277,21 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
 
                 $order->save();
 
+                /**
+                 * [!] For TEST enviroment only
+                 * Key2Pay will return an invalid redirect URL in test mode.
+                 * If merchant_id contains 'TEST', we can redirect to the order confirmation page instead.
+                 * This is a workaround for the test environment.
+                 * In production, this should not be needed as Key2Pay will provide a valid redirect URL.
+                 */
+                if (strpos($this->merchant_id, 'TEST') !== false) {
+                    $data->redirectUrl = $this->get_return_url($order);
+                    $this->log_to_file(sprintf('Key2Pay Thai QR Debit Test Mode: Using fallback redirect URL for order #%s', $order_id));
+                    wc_add_notice(__('You are in test mode. Redirecting to order confirmation page.', 'key2pay'), 'notice');
+                    sleep(10); // Allow some time for the webhook to process and simulate the payment confirmation.
+                }
+
+                // Return success with redirect URL.
                 return [
                     'result'   => 'success',
                     'redirect' => esc_url_raw($data->redirectUrl),
