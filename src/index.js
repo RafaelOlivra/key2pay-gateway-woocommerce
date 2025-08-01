@@ -26,7 +26,7 @@ const ThaiDebitFieldsContent = (props) => {
     const { title, description } = getPaymentMethodData(
         "key2pay_thai_debit"
     ) || {
-        title: __("Key2Pay Thai QR (QR Payment)", "key2pay"),
+        title: __("Key2Pay Thai QR", "key2pay"),
         description: __(
             "Pay using Thai QR payments via Key2Pay.",
             "key2pay"
@@ -192,11 +192,11 @@ const ThaiDebitFieldsContent = (props) => {
 registerPaymentMethod({
     name: "key2pay_thai_debit",
     paymentMethodId: "key2pay_thai_debit",
-    label: __("Key2Pay Thai QR (QR Payment)", "key2pay"),
+    label: __("Key2Pay Thai QR", "key2pay"),
     content: <ThaiDebitFieldsContent />,
     edit: <ThaiDebitFieldsContent />,
     canMakePayment: () => true,
-    ariaLabel: __("Key2Pay Thai QR (QR Payment)", "key2pay"),
+    ariaLabel: __("Key2Pay Thai QR", "key2pay"),
     supports: {
         features: ["products", "refunds"],
     },

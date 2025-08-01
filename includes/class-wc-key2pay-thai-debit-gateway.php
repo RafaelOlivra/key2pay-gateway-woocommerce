@@ -34,7 +34,7 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         $this->id                 = 'key2pay_thai_debit';
         $this->icon               = KEY2PAY_PLUGIN_URL . 'assets/images/key2pay.png';
         $this->has_fields         = true; // This gateway requires input fields on checkout.
-        $this->method_title       = __('Key2Pay Thai QR (QR Payment)', 'key2pay');
+        $this->method_title       = __('Key2Pay Thai QR', 'key2pay');
         $this->method_description = __('Pay using Thai QR payments via Key2Pay.', 'key2pay');
 
         // 2. Call the parent constructor (WC_Payment_Gateway) and initialize settings.

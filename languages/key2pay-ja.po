@@ -347,7 +347,7 @@ msgstr ""
 #: includes/blocks/class-wc-gateway-key2pay-thai-debit-block.php:24
 #: includes/class-wc-key2pay-thai-debit-gateway.php:36 src/index.js:153
 #: src/index.js:157
-msgid "Key2Pay Thai QR (QR Payment)"
+msgid "Key2Pay Thai QR"
 msgstr ""
 
 #: includes/blocks/class-wc-gateway-key2pay-thai-debit-block.php:25
