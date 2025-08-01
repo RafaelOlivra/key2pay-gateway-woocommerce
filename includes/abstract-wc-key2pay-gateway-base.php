@@ -8,7 +8,7 @@ if (! defined('ABSPATH')) {
  * Abstract Base Class for Key2Pay WooCommerce Payment Gateways.
  *
  * Provides common functionality, properties, and a shared structure
- * for all Key2Pay payment methods (e.g., Redirect, Thai QR Debit).
+ * for all Key2Pay payment methods (e.g., Redirect, Thai QR).
  *
  * @extends WC_Payment_Gateway
  */
@@ -575,12 +575,12 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
                 $this->debug_log('Key2Pay Payment: Order #' . $order->get_id() . ' failed - timeout (Code: ' . $status_code . ')');
                 break;
             case self::CODE_DEBIT_PENDING:
-                // Thai QR Debit initial processing, treat as pending
+                // Thai QR initial processing, treat as pending
                 $order->update_status('pending', sprintf(__('Key2Pay payment is processing. Transaction ID: %s, [Code: %s] - %s', 'key2pay'), $transaction_id, $status_code, $status_message));
                 $this->debug_log('Key2Pay Payment: Order #' . $order->get_id() . ' marked as pending (Processing)', ['source' => $this->id]);
                 break;
             case self::CODE_DEBIT_FAILED:
-                // Thai QR Debit failed, treat as failed
+                // Thai QR failed, treat as failed
                 $order->update_status('failed', sprintf(__('Key2Pay payment failed: %s. [Code: %s], Error: %s', 'key2pay'), $this->get_status_code_message($status_code), $status_code, $error_text));
                 $this->debug_log('Key2Pay Payment: Order #' . $order->get_id() . ' failed', ['source' => $this->id]);
                 break;

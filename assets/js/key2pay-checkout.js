@@ -3,7 +3,7 @@ jQuery(document).ready(function ($) {
 
     const __ = wp.i18n.__;
 
-    /** ### Handle Thai QR Debit fields ## */
+    /** ### Handle Thai QR fields ## */
 
     if ($("body").hasClass("woocommerce-checkout")) {
         // Automatically fill Thai Debit fields if they are empty
@@ -29,11 +29,11 @@ jQuery(document).ready(function ($) {
         if ($('[data-block-name="woocommerce/checkout"]').length === 0) {
             autoFillThaiDebitFields();
 
-            // Thai QR Debit requires the order amount to be 100 or more
+            // Thai QR requires the order amount to be 100 or more
             const orderTotal = getOrderTotal();
-            console.log(`Key2Pay Thai QR Debit: Order total is ${orderTotal}`);
+            console.log(`Key2Pay Thai QR: Order total is ${orderTotal}`);
             if (orderTotal && parseFloat(orderTotal) < 100) {
-                // Disable the Thai QR Debit payment method if the order total is less than 100
+                // Disable the Thai QR payment method if the order total is less than 100
                 $(".wc_payment_method.payment_method_key2pay_thai_debit")
                     .addClass("disabled")
                     .find("input[type='radio']")
@@ -41,7 +41,7 @@ jQuery(document).ready(function ($) {
 
                 $("label[for='payment_method_key2pay_thai_debit']").append(
                     `<span class="key2pay-error">${__(
-                        "Thai QR Debit is only available for orders of 100 THB or more.",
+                        "Thai QR is only available for orders of 100 THB or more.",
                         "key2pay"
                     )}</span>`
                 );

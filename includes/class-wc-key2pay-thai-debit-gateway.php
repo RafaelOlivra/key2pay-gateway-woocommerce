@@ -12,7 +12,7 @@ if (! class_exists('WC_Key2Pay_Gateway_Base')) {
 /**
  * WC_Key2Pay_Thai_Debit_Gateway Class.
  *
- * Handles Thai QR Debit payments via Key2Pay.
+ * Handles Thai QR payments via Key2Pay.
  * Customers provide bank details on checkout and are redirected for QR scan.
  *
  * @see https://key2pay.readme.io/reference/debitsolution
@@ -21,7 +21,7 @@ if (! class_exists('WC_Key2Pay_Gateway_Base')) {
 class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
 {
     /**
-     * Payment method type for Thai QR Debit payments.
+     * Payment method type for Thai QR payments.
      */
     public const PAYMENT_METHOD_TYPE = 'THAI_DEBIT';
 
@@ -34,8 +34,8 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         $this->id                 = 'key2pay_thai_debit';
         $this->icon               = KEY2PAY_PLUGIN_URL . 'assets/images/key2pay.png';
         $this->has_fields         = true; // This gateway requires input fields on checkout.
-        $this->method_title       = __('Key2Pay Thai QR Debit (QR Payment)', 'key2pay');
-        $this->method_description = __('Pay using Thai QR Debit payments via Key2Pay.', 'key2pay');
+        $this->method_title       = __('Key2Pay Thai QR (QR Payment)', 'key2pay');
+        $this->method_description = __('Pay using Thai QR payments via Key2Pay.', 'key2pay');
 
         // 2. Call the parent constructor (WC_Payment_Gateway) and initialize settings.
         parent::__construct();
@@ -60,7 +60,7 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
     }
 
     /**
-     * Payment fields for Thai QR Debit.
+     * Payment fields for Thai QR.
      * This will display input fields for payer_account_no, payer_account_name, payer_bank_code.
      * Overrides base class method.
      */
@@ -69,7 +69,7 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         if ($this->description) {
             echo wpautop(wp_kses_post($this->description));
         } else {
-            echo wpautop(wp_kses_post(__('Pay using Thai QR Debit payments via Key2Pay. Please enter your bank details below.', 'key2pay')));
+            echo wpautop(wp_kses_post(__('Pay using Thai QR payments via Key2Pay. Please enter your bank details below.', 'key2pay')));
         }
 
         echo '<fieldset id="key2pay_thai_debit_form" class="wc-payment-form wc-payment-form-thai-debit">';
@@ -103,7 +103,7 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
     }
 
     /**
-     * Validate fields specific to Thai QR Debit.
+     * Validate fields specific to Thai QR.
      * Overrides base class method.
      */
     public function validate_fields()
@@ -137,7 +137,7 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
     }
 
     /**
-     * Process the payment for Thai QR Debit.
+     * Process the payment for Thai QR.
      * Implements the abstract method from the base class.
      *
      * @param int $order_id Order ID.
@@ -147,12 +147,12 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
     {
         $order = wc_get_order($order_id);
 
-        // Collect Thai QR Debit specific fields from POST data
+        // Collect Thai QR specific fields from POST data
         $payer_account_no   = $this->get_posted_data('payer_account_no');
         $payer_account_name = $this->get_posted_data('payer_account_name');
         $payer_bank_code    = $this->get_posted_data('payer_bank_code');
 
-        // Prepare data for Key2Pay Thai QR Debit API request.
+        // Prepare data for Key2Pay Thai QR API request.
         $endpoint     = $this->build_api_url('/transaction/s2s');
         $request_data = $this->prepare_request_data($order, [
             'payment_method'     => ['type' => self::PAYMENT_METHOD_TYPE], // Specify payment method type
@@ -166,14 +166,14 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         $headers = array_merge($headers, $this->auth_handler->get_auth_headers());
 
         // Log the complete request data before sending
-        $this->debug_log(sprintf('Processing Thai QR Debit payment for order #%s.', $order_id));
-        $this->debug_log('Key2Pay Thai QR Debit API Request: Preparing to send payment request for order #' . $order_id);
-        $this->debug_log('Key2Pay Thai QR Debit API Request: API URL: ' . $endpoint);
+        $this->debug_log(sprintf('Processing Thai QR payment for order #%s.', $order_id));
+        $this->debug_log('Key2Pay Thai QR API Request: Preparing to send payment request for order #' . $order_id);
+        $this->debug_log('Key2Pay Thai QR API Request: API URL: ' . $endpoint);
         $this->debug_log('Key2Pay API Request: Headers: ' . print_r($this->redact_sensitive_data($headers), true));
-        $this->debug_log('Key2Pay Thai QR Debit API Request: Request Data: ' . print_r($this->redact_sensitive_data($request_data), true));
-        $this->debug_log('Key2Pay Thai QR Debit API Request: Webhook URL being sent: ' . $request_data['serverUrl']);
+        $this->debug_log('Key2Pay Thai QR API Request: Request Data: ' . print_r($this->redact_sensitive_data($request_data), true));
+        $this->debug_log('Key2Pay Thai QR API Request: Webhook URL being sent: ' . $request_data['serverUrl']);
 
-        // Make the API call to Key2Pay Thai QR Debit endpoint.
+        // Make the API call to Key2Pay Thai QR endpoint.
         $response = wp_remote_post(
             $endpoint,
             [
@@ -187,8 +187,8 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
 
         if (is_wp_error($response)) {
             $error_message = $this->extract_error_message($response, __('Invalid Key2Pay API response.', 'key2pay'));
-            wc_add_notice(sprintf(__('Key2Pay Thai QR Debit payment error: %s', 'key2pay'), $error_message), 'error');
-            $this->debug_log(sprintf('Key2Pay Thai QR Debit API Request Failed for order #%s: %s', $order_id, $error_message));
+            wc_add_notice(sprintf(__('Key2Pay Thai QR payment error: %s', 'key2pay'), $error_message), 'error');
+            $this->debug_log(sprintf('Key2Pay Thai QR API Request Failed for order #%s: %s', $order_id, $error_message));
             return [
                 'result'   => 'failure',
                 'redirect' => '',
@@ -197,7 +197,7 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
 
         $body = wp_remote_retrieve_body($response);
         $data = json_decode($body);
-        $this->debug_log(sprintf('Key2Pay Thai QR Debit API Response for order #%s: %s', $order_id, print_r($this->redact_sensitive_data($data), true)));
+        $this->debug_log(sprintf('Key2Pay Thai QR API Response for order #%s: %s', $order_id, print_r($this->redact_sensitive_data($data), true)));
 
         // Process the API response.
         if (isset($data->type) && 'valid' === $data->type) {
@@ -217,7 +217,7 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
                 if (empty($data->transactionid) || empty($data->token)) {
                     wc_add_notice($this->get_user_friendly_error_message($data), 'error');
                     if ($this->debug) {
-                        $this->debug_log(sprintf('Key2Pay Thai QR Debit Missing Transaction ID or Token for order #%s', $order_id));
+                        $this->debug_log(sprintf('Key2Pay Thai QR Missing Transaction ID or Token for order #%s', $order_id));
                     }
                     return [
                         'result'   => 'failure',
@@ -226,7 +226,7 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
                 }
 
                 // Payment session created successfully, redirect customer to Key2Pay.
-                $order->update_status('pending', __('Awaiting Key2Pay Thai QR Debit payment confirmation.', 'key2pay'));
+                $order->update_status('pending', __('Awaiting Key2Pay Thai QR payment confirmation.', 'key2pay'));
 
                 // Store Key2Pay transaction details.
                 if (! empty($data->transactionid)) {
@@ -251,7 +251,7 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
                  */
                 if (strpos($this->merchant_id, 'TEST') !== false) {
                     $data->redirectUrl = $this->get_return_url($order);
-                    $this->debug_log(sprintf('Key2Pay Thai QR Debit Test Mode: Using fallback redirect URL for order #%s', $order_id));
+                    $this->debug_log(sprintf('Key2Pay Thai QR Test Mode: Using fallback redirect URL for order #%s', $order_id));
                     wc_add_notice(__('You are in test mode. Redirecting to order confirmation page.', 'key2pay'), 'notice');
                     sleep(10); // Allow some time for the webhook to process and simulate the payment confirmation.
                 }
@@ -262,11 +262,11 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
                     'redirect' => esc_url_raw($data->redirectUrl),
                 ];
             } else {
-                // Valid response but no redirect URL, which is unexpected for Thai QR Debit QR.
+                // Valid response but no redirect URL, which is unexpected for Thai QR QR.
                 wc_add_notice($this->get_user_friendly_error_message($data), 'error');
-                $error_message = $this->extract_error_message($data, __('Payment session created, but no redirection URL received for Thai QR Debit.', 'key2pay'));
+                $error_message = $this->extract_error_message($data, __('Payment session created, but no redirection URL received for Thai QR.', 'key2pay'));
                 if ($this->debug) {
-                    $this->debug_log(sprintf('Key2Pay Thai QR Debit Missing Redirect URL for order #%s: %s', $order_id, $error_message));
+                    $this->debug_log(sprintf('Key2Pay Thai QR Missing Redirect URL for order #%s: %s', $order_id, $error_message));
                 }
                 return [
                     'result'   => 'failure',
@@ -276,8 +276,8 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         } else {
             // Payment session creation failed or API returned an error.
             wc_add_notice($this->get_user_friendly_error_message($data), 'error');
-            $error_message = $this->extract_error_message($data, __('An unknown error occurred with Key2Pay Thai QR Debit.', 'key2pay'));
-            $this->debug_log(sprintf('Key2Pay Thai QR Debit API Error for order #%s: %s', $order_id, $error_message));
+            $error_message = $this->extract_error_message($data, __('An unknown error occurred with Key2Pay Thai QR.', 'key2pay'));
+            $this->debug_log(sprintf('Key2Pay Thai QR API Error for order #%s: %s', $order_id, $error_message));
             return [
                 'result'   => 'failure',
                 'redirect' => '',

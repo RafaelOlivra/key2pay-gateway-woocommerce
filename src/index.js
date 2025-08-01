@@ -9,7 +9,7 @@ const { registerPaymentMethod } = window.wc.wcBlocksRegistry;
  */
 
 /**
- * ### Thai QR Debit Setup ###
+ * ### Thai QR Setup ###
  */
 
 const ThaiDebitFieldsContent = (props) => {
@@ -26,9 +26,9 @@ const ThaiDebitFieldsContent = (props) => {
     const { title, description } = getPaymentMethodData(
         "key2pay_thai_debit"
     ) || {
-        title: __("Key2Pay Thai QR Debit (QR Payment)", "key2pay"),
+        title: __("Key2Pay Thai QR (QR Payment)", "key2pay"),
         description: __(
-            "Pay using Thai QR Debit payments via Key2Pay.",
+            "Pay using Thai QR payments via Key2Pay.",
             "key2pay"
         ),
     };
@@ -74,12 +74,12 @@ const ThaiDebitFieldsContent = (props) => {
             const cartTotals = store.getCartTotals();
             const hasMinimumAmount = cartTotals.total_price >= 100;
 
-            // Check if the total amount is sufficient for Thai QR Debit
+            // Check if the total amount is sufficient for Thai QR
             if (!hasMinimumAmount) {
                 return {
                     type: emitResponse.responseTypes.ERROR,
                     message: __(
-                        "Thai QR Debit is only available for orders of 100 THB or more.",
+                        "Thai QR is only available for orders of 100 THB or more.",
                         "key2pay"
                     ),
                 };
@@ -102,7 +102,7 @@ const ThaiDebitFieldsContent = (props) => {
             return {
                 type: emitResponse.responseTypes.ERROR,
                 message: __(
-                    "Please fill in all required fields for Thai QR Debit.",
+                    "Please fill in all required fields for Thai QR.",
                     "key2pay"
                 ),
             };
@@ -192,11 +192,11 @@ const ThaiDebitFieldsContent = (props) => {
 registerPaymentMethod({
     name: "key2pay_thai_debit",
     paymentMethodId: "key2pay_thai_debit",
-    label: __("Key2Pay Thai QR Debit (QR Payment)", "key2pay"),
+    label: __("Key2Pay Thai QR (QR Payment)", "key2pay"),
     content: <ThaiDebitFieldsContent />,
     edit: <ThaiDebitFieldsContent />,
     canMakePayment: () => true,
-    ariaLabel: __("Key2Pay Thai QR Debit (QR Payment)", "key2pay"),
+    ariaLabel: __("Key2Pay Thai QR (QR Payment)", "key2pay"),
     supports: {
         features: ["products", "refunds"],
     },

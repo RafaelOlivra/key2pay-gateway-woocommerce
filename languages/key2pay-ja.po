@@ -347,7 +347,7 @@ msgstr ""
 #: includes/blocks/class-wc-gateway-key2pay-thai-debit-block.php:24
 #: includes/class-wc-key2pay-thai-debit-gateway.php:36 src/index.js:153
 #: src/index.js:157
-msgid "Key2Pay Thai QR Debit (QR Payment)"
+msgid "Key2Pay Thai QR (QR Payment)"
 msgstr ""
 
 #: includes/blocks/class-wc-gateway-key2pay-thai-debit-block.php:25
@@ -420,7 +420,7 @@ msgstr ""
 
 #: includes/class-wc-key2pay-thai-debit-gateway.php:71 src/index.js:97
 msgid ""
-"Pay securely with Thai QR Debit via Key2Pay. Please enter your bank details "
+"Pay securely with Thai QR via Key2Pay. Please enter your bank details "
 "below."
 msgstr ""
 
@@ -462,24 +462,24 @@ msgstr ""
 
 #: includes/class-wc-key2pay-thai-debit-gateway.php:224
 #, php-format
-msgid "Key2Pay Thai QR Debit payment error: %s"
+msgid "Key2Pay Thai QR payment error: %s"
 msgstr ""
 
 #: includes/class-wc-key2pay-thai-debit-gateway.php:259
-msgid "Awaiting Key2Pay Thai QR Debit payment confirmation."
+msgid "Awaiting Key2Pay Thai QR payment confirmation."
 msgstr ""
 
 #: includes/class-wc-key2pay-thai-debit-gateway.php:277
 msgid ""
-"Payment session created, but no redirection URL received for Thai QR Debit."
+"Payment session created, but no redirection URL received for Thai QR."
 msgstr ""
 
 #: includes/class-wc-key2pay-thai-debit-gateway.php:289
-msgid "An unknown error occurred with Key2Pay Thai QR Debit."
+msgid "An unknown error occurred with Key2Pay Thai QR."
 msgstr ""
 
 #: src/index.js:74
-msgid "Please fill in all required fields for Thai QR Debit."
+msgid "Please fill in all required fields for Thai QR."
 msgstr ""
 
 #: src/index.js:122
