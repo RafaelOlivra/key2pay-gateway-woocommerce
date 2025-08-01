@@ -240,14 +240,15 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
      * that will be sent to Key2Pay for processing.
      *
      * @param WC_Order $order The WooCommerce order object.
+     * @param array   $data_to_merge Additional data to merge into the request.
      * @return array An array of order data to be sent to Key2Pay.
      */
-    public function prepare_common_request_data($order)
+    public function prepare_request_data($order, $data_to_merge = [])
     {
 
         // Ensure the order is a valid WC_Order object
         if (! $order instanceof WC_Order) {
-            throw new Exception('Invalid order object provided to prepare_common_request_data.');
+            throw new Exception('Invalid order object provided to prepare_request_data.');
         }
 
         // Prepare common order data for Key2Pay payment request.
@@ -258,7 +259,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
         $server_url  = home_url('/wc-api/' . strtolower($this->id));
 
         $request_data = [
-            'payment_method'       => ['type' => self::PAYMENT_METHOD_TYPE],
+            'payment_method'       => ['type' => self::PAYMENT_METHOD_TYPE], // Should be set by child classes
             'trackid'              => $order->get_id() . '_' . time(),
             'bill_currencycode'    => $currency,
             'bill_amount'          => $amount,
@@ -267,7 +268,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
             'bill_email'           => $order->get_billing_email(),
             'returnUrl'            => $return_url,
             'serverUrl'            => $server_url,
-            'productdesc'          => sprintf(__('Order %s from %s', 'key2pay'), $order->get_order_number(), get_bloginfo('name')),
+            'productdesc'          => sprintf(__('Order #%s from %s', 'key2pay'), $order->get_order_number(), get_bloginfo('name')),
             'returnUrl_on_failure' => add_query_arg('k2p-status', 'failed', $order->get_checkout_payment_url(false)),
             'lang'                 => self::DEFAULT_LANGUAGE,
             'bill_phone'           => $order->get_billing_phone() ?: '',
@@ -276,6 +277,11 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
             'bill_address'         => $order->get_billing_address_1() ?: '',
             'bill_zip'             => $order->get_billing_postcode(),
         ];
+
+        // Merge any additional data provided by child classes
+        if (! empty($data_to_merge) && is_array($data_to_merge)) {
+            $request_data = array_merge($request_data, $data_to_merge);
+        }
 
         // Add authentication data to the request.
         $request_data = $this->auth_handler->add_auth_to_body($request_data);

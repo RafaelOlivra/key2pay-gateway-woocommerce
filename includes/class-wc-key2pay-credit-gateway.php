@@ -15,6 +15,7 @@ if (! class_exists('WC_Key2Pay_Gateway_Base')) {
  * A secure redirect-based WooCommerce payment gateway for Key2Pay for Credit Cards.
  * Customers are redirected to Key2Pay's hosted payment page.
  *
+ * @see https://key2pay.readme.io/reference/create-payment-token
  * @extends WC_Key2Pay_Gateway_Base
  */
 class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
@@ -61,7 +62,6 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
 
     /**
      * Payment fields - just show description since this is redirect-based.
-     * Overrides base class to provide specific text for this gateway.
      */
     public function payment_fields()
     {
@@ -83,15 +83,16 @@ class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
     {
         $order = wc_get_order($order_id);
 
-        
         // Prepare data for Key2Pay Credit Card API request.
         $endpoint     = $this->build_api_url('/PaymentToken/Create');
-        $request_data = $this->prepare_common_request_data($order);
-        
+        $request_data = $this->prepare_request_data($order, [
+            'payment_method' => ['type' => self::PAYMENT_METHOD_TYPE], // Specify payment method type
+        ]);
+
         // Get authentication headers (e.g., API Key, Bearer Token)
         $headers = ['Content-Type' => 'application/json'];
         $headers = array_merge($headers, $this->auth_handler->get_auth_headers());
-        
+
         // Log the complete request data before sending
         $this->debug_log(sprintf('Processing redirect payment for order #%s.', $order_id));
         $this->debug_log('Key2Pay API Request: Preparing to send payment request for order #' . $order_id);

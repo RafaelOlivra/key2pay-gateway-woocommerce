@@ -15,6 +15,7 @@ if (! class_exists('WC_Key2Pay_Gateway_Base')) {
  * Handles Thai QR Debit payments via Key2Pay.
  * Customers provide bank details on checkout and are redirected for QR scan.
  *
+ * @see https://key2pay.readme.io/reference/debitsolution
  * @extends WC_Key2Pay_Gateway_Base
  */
 class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
@@ -153,12 +154,12 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
 
         // Prepare data for Key2Pay Thai QR Debit API request.
         $endpoint     = $this->build_api_url('/transaction/s2s');
-        $request_data = $this->prepare_common_request_data($order);
-
-        // Add Thai QR Debit specific fields to the request data.
-        $request_data['payer_account_no']   = $payer_account_no;
-        $request_data['payer_account_name'] = $payer_account_name;
-        $request_data['payer_bank_code']    = $payer_bank_code;
+        $request_data = $this->prepare_request_data($order, [
+            'payment_method'     => ['type' => self::PAYMENT_METHOD_TYPE], // Specify payment method type
+            'payer_account_no'   => $payer_account_no,
+            'payer_account_name' => $payer_account_name,
+            'payer_bank_code'    => $payer_bank_code,
+        ]);
 
         // Get authentication headers (e.g., API Key, Bearer Token - empty for Basic Auth)
         $headers = ['Content-Type' => 'application/json'];
@@ -199,7 +200,6 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         $this->debug_log(sprintf('Key2Pay Thai QR Debit API Response for order #%s: %s', $order_id, print_r($this->redact_sensitive_data($data), true)));
 
         // Process the API response.
-        // @see https://key2pay.readme.io/reference/debitsolution
         if (isset($data->type) && 'valid' === $data->type) {
             if (! empty($data->redirectUrl)) {
 
