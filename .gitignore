@@ -25,3 +25,4 @@ logs
 /vendor/
 desktop.ini
 .tmp
+*.deploy
