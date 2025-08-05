@@ -20,8 +20,6 @@ const ThaiDebitFieldsContent = (props) => {
     const iconUrl = window.key2pay.assetsUrl + "images/key2pay.png";
     const store = select(window.wc.wcBlocksData.CART_STORE_KEY);
 
-    console.log(props);
-
     // Get payment labels
     const { title, description } = getPaymentMethodData(
         "key2pay_thai_debit"

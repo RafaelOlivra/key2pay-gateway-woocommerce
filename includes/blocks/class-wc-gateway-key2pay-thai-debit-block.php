@@ -8,7 +8,7 @@ class WC_Gateway_Key2Pay_Thai_Debit_Block extends AbstractPaymentMethodType
 
     public function initialize()
     {
-        add_action('enqueue_block_assets', array( $this, 'enqueue_checkout_block_scripts'));
+        add_action('enqueue_block_assets', [$this, 'enqueue_checkout_block_scripts']);
     }
 
     public function get_payment_method_script_handles()
@@ -21,19 +21,19 @@ class WC_Gateway_Key2Pay_Thai_Debit_Block extends AbstractPaymentMethodType
     public function get_payment_method_data()
     {
         return [
-            'title' => __('Key2Pay Thai QR', 'key2pay'),
+            'title'       => __('Key2Pay Thai QR', 'key2pay'),
             'description' => __('Pay using Thai QR payments via Key2Pay.', 'key2pay'),
-            'supports' => ['products', 'refunds'],
+            'supports'    => ['products', 'refunds'],
         ];
     }
 
     public function enqueue_checkout_block_scripts()
     {
-        $build = include KEY2PAY_PLUGIN_PATH . 'build/index.asset.php';
+        $build = include KEY2PAY_BLOCK_PATH . 'build/index.asset.php';
         wp_enqueue_script(
             'key2pay-thai-debit-block',
-            KEY2PAY_PLUGIN_URL . 'build/index.js',
-            [...$build['dependencies'], 'wc-blocks-registry'],
+            KEY2PAY_BLOCK_URL . 'build/index.js',
+            [ ...$build['dependencies'], 'wc-blocks-registry'],
             $build['version'],
             true
         );

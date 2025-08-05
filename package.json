@@ -1,11 +1,11 @@
 {
   "name": "key2pay-gateway-woocommerce",
-  "version": "1.0.0",
+  "version": "1.5.2",
   "description": "A secure, production-ready WooCommerce payment gateway for Key2Pay, featuring robust authentication, secure redirect payment flow, and webhook support.",
   "main": "index.js",
   "scripts": {
-    "build": "wp-scripts build",
-    "start": "wp-scripts start"
+    "build": "wp-scripts build --source-path=./includes/blocks/src --output-path=./includes/blocks/build",
+    "start": "wp-scripts start --source-path=./includes/blocks/src --output-path=./includes/blocks/build"
   },
   "repository": {
     "type": "git",
