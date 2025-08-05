@@ -4,7 +4,7 @@ A simple WooCommerce payment gateway for Key2Pay, featuring Credit Card and Thai
 
 ## 📄 Documentation
 
-https://key2pay.readme.io/reference/introduction
+[Official Key2Pay Documentation](https://key2pay.readme.io/reference/introduction)
 
 ## 📋 Requirements
 
