@@ -1,5 +1,8 @@
 <?php
 
+if (! defined('ABSPATH')) {
+    exit; // Exit if accessed directly.
+}
 
 use Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType;
 
@@ -28,11 +31,11 @@ class WC_Gateway_Key2Pay_Credit_Block extends AbstractPaymentMethodType
 
     public function enqueue_checkout_block_scripts()
     {
-        return; // No specific scripts for the credit card block at this time
+        return; // No specific scripts at this time
     }
 }
 
-// Register the Key2Pay Credit Gateway
+// Register the actual gateway class implementation
 add_filter('woocommerce_gateway_class_name', function ($class_name, $gateway_id) {
     if ($gateway_id === 'key2pay_credit') {
         require_once KEY2PAY_PLUGIN_PATH . 'includes/class-wc-key2pay-credit-gateway.php';

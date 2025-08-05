@@ -21,8 +21,8 @@ if (! defined('ABSPATH')) {
 defined('KEY2PAY_GATEWAY_VERSION') || define('KEY2PAY_GATEWAY_VERSION', '1.5.2');
 defined('KEY2PAY_PLUGIN_PATH') || define('KEY2PAY_PLUGIN_PATH', plugin_dir_path(__FILE__));
 defined('KEY2PAY_PLUGIN_URL') || define('KEY2PAY_PLUGIN_URL', plugin_dir_url(__FILE__));
-defined('KEY2PAY_BLOCK_PATH') || define('KEY2PAY_BLOCK_PATH', KEY2PAY_PLUGIN_PATH . 'includes/blocks/');
-defined('KEY2PAY_BLOCK_URL') || define('KEY2PAY_BLOCK_URL', KEY2PAY_PLUGIN_URL . 'includes/blocks/');
+defined('KEY2PAY_BLOCKS_PATH') || define('KEY2PAY_BLOCKS_PATH', KEY2PAY_PLUGIN_PATH . 'includes/blocks/');
+defined('KEY2PAY_BLOCKS_URL') || define('KEY2PAY_BLOCKS_URL', KEY2PAY_PLUGIN_URL . 'includes/blocks/');
 
 /**
  * The main plugin class.
@@ -130,12 +130,14 @@ class WC_Key2Pay_Gateway_Plugin
         add_action(
             'woocommerce_blocks_payment_method_type_registration',
             function ($payment_method_registry) {
-                require_once KEY2PAY_PLUGIN_PATH . 'includes/blocks/class-wc-gateway-key2pay-credit-block.php';
-                require_once KEY2PAY_PLUGIN_PATH . 'includes/blocks/class-wc-gateway-key2pay-thai-debit-block.php';
-
+                // Credit Card Block
+                require_once KEY2PAY_BLOCKS_PATH . 'class-wc-gateway-key2pay-credit-block.php';
                 $payment_method_registry->register(
                     new WC_Gateway_Key2Pay_Credit_Block()
                 );
+
+                // Thai QR Block
+                require_once KEY2PAY_BLOCKS_PATH . 'class-wc-gateway-key2pay-thai-debit-block.php';
                 $payment_method_registry->register(
                     new WC_Gateway_Key2Pay_Thai_Debit_Block()
                 );

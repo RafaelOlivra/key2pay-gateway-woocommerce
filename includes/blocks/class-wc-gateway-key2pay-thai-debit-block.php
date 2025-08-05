@@ -1,5 +1,9 @@
 <?php
 
+if (! defined('ABSPATH')) {
+    exit; // Exit if accessed directly.
+}
+
 use Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType;
 
 class WC_Gateway_Key2Pay_Thai_Debit_Block extends AbstractPaymentMethodType
@@ -29,10 +33,10 @@ class WC_Gateway_Key2Pay_Thai_Debit_Block extends AbstractPaymentMethodType
 
     public function enqueue_checkout_block_scripts()
     {
-        $build = include KEY2PAY_BLOCK_PATH . 'build/index.asset.php';
+        $build = include KEY2PAY_BLOCKS_PATH . 'build/index.asset.php';
         wp_enqueue_script(
             'key2pay-thai-debit-block',
-            KEY2PAY_BLOCK_URL . 'build/index.js',
+            KEY2PAY_BLOCKS_URL . 'build/index.js',
             [ ...$build['dependencies'], 'wc-blocks-registry'],
             $build['version'],
             true
@@ -40,7 +44,7 @@ class WC_Gateway_Key2Pay_Thai_Debit_Block extends AbstractPaymentMethodType
     }
 }
 
-// Register the Key2Pay Credit Gateway
+// Register the actual gateway class implementation
 add_filter('woocommerce_gateway_class_name', function ($class_name, $gateway_id) {
     if ($gateway_id === 'key2pay_thai_debit') {
         require_once KEY2PAY_PLUGIN_PATH . 'includes/class-wc-key2pay-thai-debit-gateway.php';

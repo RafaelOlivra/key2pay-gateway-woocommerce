@@ -60,7 +60,7 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
     }
 
     /**
-     * Payment fields for Thai QR.
+     * Payment fields for redirect-based Thai QR.
      * This will display input fields for payer_account_no, payer_account_name, payer_bank_code.
      * Overrides base class method.
      */

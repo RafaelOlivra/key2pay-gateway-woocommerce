@@ -21,8 +21,7 @@ if (! class_exists('WC_Key2Pay_Gateway_Base')) {
 class WC_Key2Pay_Credit_Gateway extends WC_Key2Pay_Gateway_Base
 {
     /**
-     * Payment method type for redirect-based payments.
-     * CARD = Credit card payments only
+     * Payment method type for redirect-based card payments.
      */
     public const PAYMENT_METHOD_TYPE = 'BANKCARD';
 
