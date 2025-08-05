@@ -75,8 +75,9 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         echo '<fieldset id="key2pay_thai_debit_form" class="wc-payment-form wc-payment-form-thai-debit">';
 
         // We may want a dropdown for bank codes if Key2Pay provides a list
+        // @todo: Implement bank code dropdown if a list is available
         woocommerce_form_field('payer_bank_code', [
-            'type'        => 'text', // Can be select if you have a list of banks
+            'type'        => 'text',
             'label'       => __('Bank Code', 'key2pay'),
             'placeholder' => __('e.g. KBANK', 'key2pay'),
             'required'    => true,
@@ -155,7 +156,7 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         // Prepare data for Key2Pay Thai QR API request.
         $endpoint     = $this->build_api_url('/transaction/s2s');
         $request_data = $this->prepare_request_data($order, [
-            'payment_method'     => ['type' => self::PAYMENT_METHOD_TYPE], // Specify payment method type
+            'payment_method'     => ['type' => self::PAYMENT_METHOD_TYPE],
             'payer_account_no'   => $payer_account_no,
             'payer_account_name' => $payer_account_name,
             'payer_bank_code'    => $payer_bank_code,
@@ -205,8 +206,8 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
 
                 // Check for "Not Successful" response code
                 if (! empty($data->result) && trim($data->result) == "Not Successful") {
-                    wc_add_notice(sprintf(__('Key2Pay Credit Card payment failed: %s', 'key2pay'), $this->extract_error_message($data)), 'error');
-                    $this->debug_log(sprintf('Key2Pay Credit Card Not Successful for order #%s: %s', $order_id, $data->error_text ?? 'Unknown error'));
+                    wc_add_notice(sprintf(__('Key2Pay Thai QR payment failed: %s', 'key2pay'), $this->extract_error_message($data)), 'error');
+                    $this->debug_log(sprintf('Key2Pay Thai QR Not Successful for order #%s: %s', $order_id, $data->error_text ?? 'Unknown error'));
                     return [
                         'result'   => 'failure',
                         'redirect' => '',

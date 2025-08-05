@@ -105,8 +105,8 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
      */
     public function setup_authentication_handler(): WC_Key2Pay_Auth
     {
+        // Initialize the authentication handler based on the auth type.
         try {
-                                                                                         // Initialize the authentication handler based on the auth type.
             $this->auth_handler = new WC_Key2Pay_Auth(WC_Key2Pay_Auth::AUTH_TYPE_BASIC); // Only Basic Auth is supported in this base class.
             $this->auth_handler->set_credentials([
                 'merchant_id' => $this->merchant_id,
