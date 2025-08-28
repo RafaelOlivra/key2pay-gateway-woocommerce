@@ -25,10 +25,7 @@ const ThaiDebitFieldsContent = (props) => {
         "key2pay_thai_debit"
     ) || {
         title: __("Key2Pay Thai QR", "key2pay"),
-        description: __(
-            "Pay using Thai QR payments via Key2Pay.",
-            "key2pay"
-        ),
+        description: __("Pay using Thai QR payments via Key2Pay.", "key2pay"),
     };
 
     // State to store input values
@@ -70,7 +67,11 @@ const ThaiDebitFieldsContent = (props) => {
         const unsubscribe = onPaymentSetup(async () => {
             const isValid = accountNo && accountName && bankCode;
             const cartTotals = store.getCartTotals();
-            const hasMinimumAmount = cartTotals.total_price >= 100;
+            const cartAmountScaled =
+                cartTotals.total_price / 10 ** cartTotals.currency_minor_unit;
+            const hasMinimumAmount = cartAmountScaled >= 100;
+
+            console.log("Cart Total Amount:", cartAmountScaled);
 
             // Check if the total amount is sufficient for Thai QR
             if (!hasMinimumAmount) {
@@ -152,10 +153,7 @@ const ThaiDebitFieldsContent = (props) => {
                             {__("Bank Account Number", "key2pay")}
                             <input
                                 type='text'
-                                placeholder={__(
-                                    "Enter your debit account number",
-                                    "key2pay"
-                                )}
+                                placeholder={__("123-123-1234", "key2pay")}
                                 name='payer_account_no'
                                 value={accountNo}
                                 onChange={(e) => setAccountNo(e.target.value)} // Update state on change
@@ -171,7 +169,7 @@ const ThaiDebitFieldsContent = (props) => {
                             <input
                                 type='text'
                                 placeholder={__(
-                                    "Name on your debit account",
+                                    "Name on your account",
                                     "key2pay"
                                 )}
                                 name='payer_account_name'

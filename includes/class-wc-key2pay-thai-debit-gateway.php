@@ -87,7 +87,7 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         woocommerce_form_field('payer_account_no', [
             'type'        => 'text',
             'label'       => __('Bank Account Number', 'key2pay'),
-            'placeholder' => __('Enter your debit account number', 'key2pay'),
+            'placeholder' => __('123-123-1234', 'key2pay'),
             'required'    => true,
             'default'     => '',
         ], $this->get_posted_data('payer_account_no'));
@@ -95,7 +95,7 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         woocommerce_form_field('payer_account_name', [
             'type'        => 'text',
             'label'       => __('Bank Account Name', 'key2pay'),
-            'placeholder' => __('Name on your debit account', 'key2pay'),
+            'placeholder' => __('Name on your account', 'key2pay'),
             'required'    => true,
             'default'     => '',
         ], $this->get_posted_data('payer_account_name'));
@@ -118,6 +118,9 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         $account_no   = $this->get_posted_data('payer_account_no');
         $account_name = $this->get_posted_data('payer_account_name');
         $bank_code    = $this->get_posted_data('payer_bank_code');
+
+        // Keep only numbers for account number
+        $account_no = preg_replace('/\D/', '', $account_no);
 
         $this->debug_log("Posted Data: " . print_r($this->get_post_data(), true));
 
