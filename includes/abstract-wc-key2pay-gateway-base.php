@@ -125,17 +125,20 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
      * This defines the base fields that all Key2Pay gateways share.
      * Child classes should override this and call parent::init_form_fields()
      * to inherit these fields and then add their specific fields.
+     *
+     * @param array $extra_fields Additional fields to merge into the form fields.
      */
-    public function init_form_fields()
+    public function init_form_fields($extra_fields = [])
     {
         $auth_types = WC_Key2Pay_Auth::get_auth_types();
 
-        $this->form_fields = [
+        $default_form_fields = [
             'enabled'              => [
                 'title'   => __('Enable/Disable', 'key2pay'),
                 'type'    => 'checkbox',
                 'label'   => __('Enable Key2Pay Payment Method', 'key2pay'),
                 'default' => 'no',
+                'order'   => 10,
             ],
             'title'                => [
                 'title'       => __('Title', 'key2pay'),
@@ -143,6 +146,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
                 'description' => __('This controls the title which the user sees during checkout.', 'key2pay'),
                 'default'     => $this->method_title, // Uses the child's method_title
                 'desc_tip'    => true,
+                'order'       => 20,
             ],
             'description'          => [
                 'title'       => __('Description', 'key2pay'),
@@ -150,11 +154,13 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
                 'description' => __('This controls the description which the user sees during checkout.', 'key2pay'),
                 'default'     => $this->method_description, // Uses the child's method_description
                 'desc_tip'    => true,
+                'order'       => 30,
             ],
             'auth_section'         => [
                 'title'       => __('Key2Pay API Authentication', 'key2pay'),
                 'type'        => 'title',
                 'description' => __('Configure how to authenticate with the Key2Pay API. Consult your Key2Pay account manager for the correct method.', 'key2pay'),
+                'order'       => 40,
             ],
             'auth_type'            => [
                 'title'       => __('Authentication Method', 'key2pay'),
@@ -163,6 +169,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
                 'options'     => $auth_types,
                 'default'     => WC_Key2Pay_Auth::AUTH_TYPE_BASIC,
                 'desc_tip'    => true,
+                'order'       => 50,
             ],
             'merchant_id'          => [
                 'title'       => __('Merchant ID', 'key2pay'),
@@ -170,6 +177,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
                 'description' => __('Your Key2Pay Merchant ID. Used for Basic Auth, and might be required for HMAC Signed.', 'key2pay'),
                 'default'     => '',
                 'desc_tip'    => true,
+                'order'       => 60,
             ],
             'password'             => [
                 'title'       => __('Password', 'key2pay'),
@@ -177,6 +185,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
                 'description' => __('Your Key2Pay API Password. Used for Basic Auth.', 'key2pay'),
                 'default'     => '',
                 'desc_tip'    => true,
+                'order'       => 70,
             ],
             'api_base_url'         => [
                 'title'             => __('API Base URL', 'key2pay'),
@@ -187,6 +196,7 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
                 'custom_attributes' => [
                     'placeholder' => 'https://api.key2payment.com/',
                 ],
+                'order'             => 80,
             ],
             'debug'                => [
                 'title'       => __('Debug Log', 'key2pay'),
@@ -194,11 +204,13 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
                 'label'       => __('Enable logging', 'key2pay'),
                 'default'     => 'no',
                 'description' => sprintf(__('Log Key2Pay payment events to <code>%s</code>.', 'key2pay'), esc_html(WP_CONTENT_DIR . '/uploads/key2pay-gateway.log')), // Direct path here for description
+                'desc_tip'    => true,
             ],
             'security_section'     => [
                 'title'       => __('Security Settings', 'key2pay'),
                 'type'        => 'title',
                 'description' => __('Configure security settings for payment processing.', 'key2pay'),
+                'order'       => 90,
             ],
             'disable_url_fallback' => [
                 'title'       => __('Disable URL Parameter Fallback', 'key2pay'),
@@ -206,8 +218,23 @@ abstract class WC_Key2Pay_Gateway_Base extends WC_Payment_Gateway
                 'label'       => __('Disable URL parameter processing for maximum security', 'key2pay'),
                 'default'     => 'yes',
                 'description' => __('When enabled, only webhooks will be used for payment status updates. URL parameters will be completely ignored. Recommended for production environments.', 'key2pay'),
+                'order'       => 100,
             ],
         ];
+
+        // Merge any extra fields provided by child classes
+        if (! empty($extra_fields) && is_array($extra_fields)) {
+            $default_form_fields = array_merge($default_form_fields, $extra_fields);
+        }
+
+        // Allow sorting the form fields by 'order' if provided
+        uasort($default_form_fields, function ($a, $b) {
+            $order_a = isset($a['order']) ? (int) $a['order'] : 0;
+            $order_b = isset($b['order']) ? (int) $b['order'] : 0;
+            return $order_a <=> $order_b;
+        });
+
+        $this->form_fields = $default_form_fields;
     }
 
     /**

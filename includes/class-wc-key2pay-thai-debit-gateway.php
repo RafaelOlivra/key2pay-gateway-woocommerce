@@ -25,6 +25,32 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
      */
     public const PAYMENT_METHOD_TYPE = 'THAI_DEBIT';
 
+    // Specific fields for Thai QR payments
+
+    /**
+     * Bank account number of the payer.
+     *
+     * [i] This relates to the stored controlled account where Key2Pay will send the payment funds
+     * from the QR transaction.
+     */
+    public $payer_account_no;
+
+    /**
+     * Bank account name of the payer.
+     *
+     * [i] This relates to the stored controlled account where Key2Pay will send the payment funds
+     * from the QR transaction.
+     */
+    public $payer_account_name;
+
+    /**
+     * Bank code of the payer's bank (e.g., KBANK).
+     *
+     * [i] This relates to the stored controlled account where Key2Pay will send the payment funds
+     * from the QR transaction.
+     */
+    public $payer_bank_code;
+
     /**
      * Constructor for the gateway.
      */
@@ -39,7 +65,32 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
 
         // 2. Call the parent constructor (WC_Payment_Gateway) and initialize settings.
         parent::__construct();
-        $this->init_form_fields();
+        $this->init_form_fields([
+            'payer_account_no'   => [
+                'title'       => __('Bank Account Number', 'key2pay'),
+                'type'        => 'text',
+                'description' => __('Enter your bank account number for Thai QR payments.', 'key2pay'),
+                'default'     => '',
+                'required'    => true,
+                'order'       => 71,
+            ],
+            'payer_account_name' => [
+                'title'       => __('Bank Account Name', 'key2pay'),
+                'type'        => 'text',
+                'description' => __('Enter the name on your bank account for Thai QR payments.', 'key2pay'),
+                'default'     => '',
+                'required'    => true,
+                'order'       => 72,
+            ],
+            'payer_bank_code'    => [
+                'title'       => __('Bank Code', 'key2pay'),
+                'type'        => 'text',
+                'description' => __('Enter your bank code (e.g., KBANK) for Thai QR payments.', 'key2pay'),
+                'default'     => '',
+                'required'    => true,
+                'order'       => 73,
+            ],
+        ]);
         $this->init_settings();
 
         // 3. Load plugin options into properties (these are available AFTER parent::__construct() and init_settings() have run).
@@ -53,6 +104,13 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         $this->api_base_url         = sanitize_text_field($this->get_option('api_base_url', self::DEFAULT_API_BASE_URL));
         $this->disable_url_fallback = 'yes' === $this->get_option('disable_url_fallback');
 
+        # Extra payment fields
+
+        # [!] This actually is to be filled by the customer at checkout
+        // $this->payer_account_no   = sanitize_text_field($this->get_option('payer_account_no'));
+        // $this->payer_account_name = sanitize_text_field($this->get_option('payer_account_name'));
+        // $this->payer_bank_code    = sanitize_text_field($this->get_option('payer_bank_code'));
+
         // 4. Initialize authentication handler using the retrieved settings.
         $this->setup_authentication_handler();
 
@@ -61,7 +119,6 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
 
     /**
      * Payment fields for redirect-based Thai QR.
-     * This will display input fields for payer_account_no, payer_account_name, payer_bank_code.
      * Overrides base class method.
      */
     public function payment_fields()
@@ -69,7 +126,7 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         if ($this->description) {
             echo wpautop(wp_kses_post($this->description));
         } else {
-            echo wpautop(wp_kses_post(__('Pay using Thai QR payments via Key2Pay. Please enter your bank details below.', 'key2pay')));
+            echo wpautop(wp_kses_post(__('Pay using Thai QR payments via Key2Pay.', 'key2pay')));
         }
 
         echo '<fieldset id="key2pay_thai_debit_form" class="wc-payment-form wc-payment-form-thai-debit">';
@@ -115,25 +172,25 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
             return false;
         }
 
-        $account_no   = $this->get_posted_data('payer_account_no');
-        $account_name = $this->get_posted_data('payer_account_name');
-        $bank_code    = $this->get_posted_data('payer_bank_code');
+        $payer_account_no   = $this->get_posted_data('payer_account_no');
+        $payer_account_name = $this->get_posted_data('payer_account_name');
+        $payer_bank_code    = $this->get_posted_data('payer_bank_code');
 
         // Keep only numbers for account number
-        $account_no = preg_replace('/\D/', '', $account_no);
+        $payer_account_no = preg_replace('/\D/', '', $payer_account_no);
 
         $this->debug_log("Posted Data: " . print_r($this->get_post_data(), true));
 
-        if (empty($account_no)) {
-            wc_add_notice(__('Please provide your Bank Account Number.', 'key2pay'), 'error');
+        if (empty($payer_account_no)) {
+            wc_add_notice(__('Please provide the Bank Account Number.', 'key2pay'), 'error');
             return false;
         }
-        if (empty($account_name)) {
-            wc_add_notice(__('Please provide your Bank Account Name.', 'key2pay'), 'error');
+        if (empty($payer_account_name)) {
+            wc_add_notice(__('Please provide the Bank Account Name.', 'key2pay'), 'error');
             return false;
         }
-        if (empty($bank_code)) {
-            wc_add_notice(__('Please provide your Bank Code.', 'key2pay'), 'error');
+        if (empty($payer_bank_code)) {
+            wc_add_notice(__('Please provide the Bank Code.', 'key2pay'), 'error');
             return false;
         }
 
@@ -155,6 +212,9 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         $payer_account_no   = $this->get_posted_data('payer_account_no');
         $payer_account_name = $this->get_posted_data('payer_account_name');
         $payer_bank_code    = $this->get_posted_data('payer_bank_code');
+
+        // Keep only numbers for account number
+        $payer_account_no = preg_replace('/\D/', '', $payer_account_no);
 
         // Prepare data for Key2Pay Thai QR API request.
         $endpoint     = $this->build_api_url('/transaction/s2s');

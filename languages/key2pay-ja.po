@@ -449,15 +449,15 @@ msgid "Name on your debit account"
 msgstr ""
 
 #: includes/class-wc-key2pay-thai-debit-gateway.php:123
-msgid "Please provide your Bank Account Number."
+msgid "Please provide the Bank Account Number."
 msgstr ""
 
 #: includes/class-wc-key2pay-thai-debit-gateway.php:127
-msgid "Please provide your Bank Account Name."
+msgid "Please provide the Bank Account Name."
 msgstr ""
 
 #: includes/class-wc-key2pay-thai-debit-gateway.php:131
-msgid "Please provide your Bank Code."
+msgid "Please provide the Bank Code."
 msgstr ""
 
 #: includes/class-wc-key2pay-thai-debit-gateway.php:224
