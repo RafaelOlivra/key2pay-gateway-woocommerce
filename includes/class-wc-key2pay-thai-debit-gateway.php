@@ -25,32 +25,6 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
      */
     public const PAYMENT_METHOD_TYPE = 'THAI_DEBIT';
 
-    // Specific fields for Thai QR payments
-
-    /**
-     * Bank account number of the payer.
-     *
-     * [i] This relates to the stored controlled account where Key2Pay will send the payment funds
-     * from the QR transaction.
-     */
-    public $payer_account_no;
-
-    /**
-     * Bank account name of the payer.
-     *
-     * [i] This relates to the stored controlled account where Key2Pay will send the payment funds
-     * from the QR transaction.
-     */
-    public $payer_account_name;
-
-    /**
-     * Bank code of the payer's bank (e.g., KBANK).
-     *
-     * [i] This relates to the stored controlled account where Key2Pay will send the payment funds
-     * from the QR transaction.
-     */
-    public $payer_bank_code;
-
     /**
      * Constructor for the gateway.
      */
@@ -65,32 +39,7 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
 
         // 2. Call the parent constructor (WC_Payment_Gateway) and initialize settings.
         parent::__construct();
-        $this->init_form_fields([
-            'payer_account_no'   => [
-                'title'       => __('Bank Account Number', 'key2pay'),
-                'type'        => 'text',
-                'description' => __('Enter your bank account number for Thai QR payments.', 'key2pay'),
-                'default'     => '',
-                'required'    => true,
-                'order'       => 71,
-            ],
-            'payer_account_name' => [
-                'title'       => __('Bank Account Name', 'key2pay'),
-                'type'        => 'text',
-                'description' => __('Enter the name on your bank account for Thai QR payments.', 'key2pay'),
-                'default'     => '',
-                'required'    => true,
-                'order'       => 72,
-            ],
-            'payer_bank_code'    => [
-                'title'       => __('Bank Code', 'key2pay'),
-                'type'        => 'text',
-                'description' => __('Enter your bank code (e.g., KBANK) for Thai QR payments.', 'key2pay'),
-                'default'     => '',
-                'required'    => true,
-                'order'       => 73,
-            ],
-        ]);
+        $this->init_form_fields();
         $this->init_settings();
 
         // 3. Load plugin options into properties (these are available AFTER parent::__construct() and init_settings() have run).
@@ -103,13 +52,6 @@ class WC_Key2Pay_Thai_Debit_Gateway extends WC_Key2Pay_Gateway_Base
         $this->auth_type            = $this->get_option('auth_type', WC_Key2Pay_Auth::AUTH_TYPE_BASIC); // Get auth_type from settings or default
         $this->api_base_url         = sanitize_text_field($this->get_option('api_base_url', self::DEFAULT_API_BASE_URL));
         $this->disable_url_fallback = 'yes' === $this->get_option('disable_url_fallback');
-
-        # Extra payment fields
-
-        # [!] This actually is to be filled by the customer at checkout
-        // $this->payer_account_no   = sanitize_text_field($this->get_option('payer_account_no'));
-        // $this->payer_account_name = sanitize_text_field($this->get_option('payer_account_name'));
-        // $this->payer_bank_code    = sanitize_text_field($this->get_option('payer_bank_code'));
 
         // 4. Initialize authentication handler using the retrieved settings.
         $this->setup_authentication_handler();
